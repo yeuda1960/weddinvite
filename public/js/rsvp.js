@@ -180,10 +180,6 @@ function validateForm() {
         if (isNaN(numberOfGuests) || numberOfGuests < 1) {
             return { valid: false, message: 'אנא הזן/י מספר אורחים תקין (לפחות 1).' };
         }
-
-        if (numberOfGuests > 10) {
-            return { valid: false, message: 'מספר האורחים המקסימלי הוא 10. לקבוצות גדולות יותר, אנא צור קשר.' };
-        }
     }
 
     return { valid: true, phone: phone };
@@ -212,27 +208,31 @@ form.addEventListener('submit', async (e) => {
         const checkedRadio = document.querySelector('input[name="attending"]:checked');
         const attending = checkedRadio.value === 'yes';
 
-        // Get existing guest data to preserve originalName
-        let originalName = rsvpName;
+        // Check if guest already exists to determine if this is new or update
+        let isNewGuest = true;
         try {
             const existingDoc = await db.collection('guests').doc(phone).get();
             if (existingDoc.exists) {
-                const existingData = existingDoc.data();
-                originalName = existingData.originalName || existingData.name || rsvpName;
+                isNewGuest = false;
             }
         } catch (e) {
-            // Ignore - use rsvpName as originalName
+            // Assume new guest on error
         }
 
+        // Build formData - NEVER include originalName for existing guests
         const formData = {
-            originalName: originalName,  // Keep original name from sync
-            rsvpName: rsvpName,          // Name entered in RSVP form
+            rsvpName: rsvpName,          // Name entered in RSVP form (always save)
             name: rsvpName,              // Current display name
             phone: phone,
             attending: attending,
             rsvpSubmitted: true,
             rsvpSubmittedAt: firebase.firestore.FieldValue.serverTimestamp(),
         };
+
+        // Only set originalName for NEW guests
+        if (isNewGuest) {
+            formData.originalName = rsvpName;
+        }
 
         // Add conditional fields if attending
         if (attending) {

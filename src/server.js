@@ -299,6 +299,8 @@ app.post('/api/whatsapp/send-single', async (req, res) => {
 app.post('/api/guests/reset', async (req, res) => {
     const { phones } = req.body; // Array of phone numbers
 
+    console.log('🔄 Reset request for phones:', phones);
+
     if (!phones || !Array.isArray(phones) || phones.length === 0) {
         return res.status(400).json({ success: false, error: 'Phones array is required' });
     }
@@ -312,29 +314,32 @@ app.post('/api/guests/reset', async (req, res) => {
 
             if (doc.exists) {
                 const existingData = doc.data();
-                // Reset but keep name and phone
+                // Reset but keep name, originalName, and phone
                 await docRef.update({
                     messageStatus: 'pending',
                     rsvpSubmitted: false,
-                    attending: null,
-                    numberOfGuests: 0,
+                    attending: admin.firestore.FieldValue.delete(),
+                    numberOfGuests: admin.firestore.FieldValue.delete(),
                     hasChildren: false,
                     notes: '',
-                    rsvpName: null,
-                    rsvpSubmittedAt: null,
-                    sentAt: null,
-                    lastAttempt: null,
+                    rsvpName: admin.firestore.FieldValue.delete(),
+                    rsvpSubmittedAt: admin.firestore.FieldValue.delete(),
+                    sentAt: admin.firestore.FieldValue.delete(),
+                    lastAttempt: admin.firestore.FieldValue.delete(),
                     attemptCount: 0,
-                    lastError: null
+                    lastError: admin.firestore.FieldValue.delete()
                 });
                 resetCount++;
-                console.log(`🔄 Reset guest: ${existingData.originalName || existingData.name}`);
+                console.log(`🔄 Reset guest: ${existingData.originalName || existingData.name} (${phone})`);
+            } else {
+                console.log(`⚠️ Guest not found for reset: ${phone}`);
             }
         }
 
+        console.log(`✅ Reset complete: ${resetCount} guests reset`);
         res.json({ success: true, reset: resetCount });
     } catch (error) {
-        console.error('Reset error:', error);
+        console.error('❌ Reset error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -342,6 +347,8 @@ app.post('/api/guests/reset', async (req, res) => {
 // Delete guests
 app.post('/api/guests/delete', async (req, res) => {
     const { phones } = req.body; // Array of phone numbers
+
+    console.log('🗑️ Delete request for phones:', phones);
 
     if (!phones || !Array.isArray(phones) || phones.length === 0) {
         return res.status(400).json({ success: false, error: 'Phones array is required' });
@@ -359,12 +366,15 @@ app.post('/api/guests/delete', async (req, res) => {
                 await docRef.delete();
                 deleteCount++;
                 console.log(`🗑️ Deleted guest: ${guestName} (${phone})`);
+            } else {
+                console.log(`⚠️ Guest not found for delete: ${phone}`);
             }
         }
 
+        console.log(`✅ Delete complete: ${deleteCount} guests deleted`);
         res.json({ success: true, deleted: deleteCount });
     } catch (error) {
-        console.error('Delete error:', error);
+        console.error('❌ Delete error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
