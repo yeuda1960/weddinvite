@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Guests collection - read/write for RSVP submissions
+    match /guests/{guestId} {
+      // Allow anyone to read guest data (needed for RSVP form)
+      allow read: if true;
+      // Allow anyone to update their own RSVP
+      allow update: if true;
+      // Only allow creation from backend
+      allow create: if false;
+      allow delete: if false;
+    }
+    
+    // Statistics collection - read only for dashboard
+    match /statistics/{statId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

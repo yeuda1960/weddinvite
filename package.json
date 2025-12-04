@@ -1,0 +1,31 @@
+{
+  "name": "wedding-invitation-system",
+  "version": "1.0.0",
+  "description": "Wedding invitation system with WhatsApp automation and RSVP management",
+  "main": "src/scripts/sendInvitations.js",
+  "scripts": {
+    "send-invitations": "node src/scripts/sendInvitations.js",
+    "test-whatsapp": "node src/scripts/testWhatsApp.js",
+    "test-sheets": "node src/scripts/testGoogleSheets.js",
+    "test-firebase": "node src/scripts/testFirebase.js",
+    "start": "node src/server.js",
+    "deploy": "firebase deploy"
+  },
+  "keywords": [
+    "wedding",
+    "whatsapp",
+    "rsvp",
+    "invitation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "whatsapp-web.js": "^1.23.0",
+    "qrcode-terminal": "^0.12.0",
+    "firebase-admin": "^12.0.0",
+    "googleapis": "^128.0.0",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
+  }
+}

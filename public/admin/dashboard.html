@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>לוח ניהול - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Assistant:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="container">
+                <h1>לוח ניהול חתונה 💒</h1>
+                <p class="header-subtitle">ניהול הזמנות ואישורי הגעה</p>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <section class="stats-section">
+            <div class="container">
+                <div class="stats-grid">
+                    <!-- Total Invitations Sent -->
+                    <div class="stat-card" data-filter="sent">
+                        <div class="stat-icon">📤</div>
+                        <div class="stat-content">
+                            <div class="stat-label">הזמנות נשלחו</div>
+                            <div class="stat-value" id="statSent">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Failed Messages -->
+                    <div class="stat-card error" data-filter="failed">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-content">
+                            <div class="stat-label">נכשלו</div>
+                            <div class="stat-value" id="statFailed">-</div>
+                        </div>
+                    </div>
+
+                    <!-- No Response (Pending) -->
+                    <div class="stat-card warning" data-filter="noResponse">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-content">
+                            <div class="stat-label">לא ענו</div>
+                            <div class="stat-value" id="statNoResponse">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Total RSVPs -->
+                    <div class="stat-card" data-filter="rsvp">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-label">אישרו הגעה</div>
+                            <div class="stat-value" id="statRsvp">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Attending -->
+                    <div class="stat-card success" data-filter="attending">
+                        <div class="stat-icon">🎉</div>
+                        <div class="stat-content">
+                            <div class="stat-label">מגיעים</div>
+                            <div class="stat-value" id="statAttending">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Not Attending -->
+                    <div class="stat-card" data-filter="notAttending">
+                        <div class="stat-icon">😔</div>
+                        <div class="stat-content">
+                            <div class="stat-label">לא מגיעים</div>
+                            <div class="stat-value" id="statNotAttending">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Guests -->
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <div class="stat-label">סה"כ אורחים</div>
+                            <div class="stat-value" id="statTotalGuests">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Vegetarian -->
+                    <div class="stat-card" data-filter="vegetarian">
+                        <div class="stat-icon">🥗</div>
+                        <div class="stat-content">
+                            <div class="stat-label">צמחוניים</div>
+                            <div class="stat-value" id="statVegetarian">-</div>
+                        </div>
+                    </div>
+
+                    <!-- With Children -->
+                    <div class="stat-card" data-filter="children">
+                        <div class="stat-icon">👶</div>
+                        <div class="stat-content">
+                            <div class="stat-label">עם ילדים</div>
+                            <div class="stat-value" id="statChildren">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters and Search -->
+        <section class="controls-section">
+            <div class="container">
+                <div class="controls">
+                    <input type="text" id="searchInput" placeholder="חיפוש לפי שם או טלפון..." class="search-input">
+                    <select id="filterSelect" class="filter-select">
+                        <option value="all">כל האורחים</option>
+                        <option value="sent">הזמנות נשלחו</option>
+                        <option value="failed">נכשלו</option>
+                        <option value="noResponse">לא ענו ⏳</option>
+                        <option value="rsvp">אישרו הגעה</option>
+                        <option value="attending">מגיעים</option>
+                        <option value="notAttending">לא מגיעים</option>
+                        <option value="vegetarian">צמחוניים</option>
+                        <option value="children">עם ילדים</option>
+                    </select>
+                    <button id="copyPhonesBtn" class="copy-phones-btn">📋 העתק טלפונים</button>
+                    <button id="exportBtn" class="export-btn">📥 ייצוא לאקסל</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Guest List Table -->
+        <section class="table-section">
+            <div class="container">
+                <div class="table-container">
+                    <table class="guests-table">
+                        <thead>
+                            <tr>
+                                <th>שם</th>
+                                <th>טלפון</th>
+                                <th>סטטוס שליחה</th>
+                                <th>אישור הגעה</th>
+                                <th>מגיע?</th>
+                                <th>מספר אורחים</th>
+                                <th>צמחוני</th>
+                                <th>ילדים</th>
+                                <th>הערות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guestsTableBody">
+                            <tr>
+                                <td colspan="9" class="loading">טוען נתונים...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>
