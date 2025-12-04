@@ -19,7 +19,7 @@ class WhatsAppService {
         this.client = new Client({
             authStrategy: new LocalAuth(),
             puppeteer: {
-                headless: true,
+                headless: false,  // Show browser window
                 args: ['--no-sandbox', '--disable-setuid-sandbox'],
                 timeout: 180000  // 3 minutes timeout
             }
@@ -94,7 +94,7 @@ class WhatsAppService {
 📅 פרטי האירוע מצורפים בתמונה
 
 🔗 אנא אשר/י הגעה בקישור הבא:
-${rsvpUrl}?phone=${phone}
+${rsvpUrl}
 
 נשמח לראותך! ❤️
       `.trim();

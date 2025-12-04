@@ -12,6 +12,81 @@
         rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .selection-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .selection-actions .action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            color: white;
+        }
+
+        .selection-actions .send-btn {
+            background: #4caf50;
+        }
+
+        .selection-actions .reset-btn {
+            background: #ff9800;
+        }
+
+        .selection-actions .delete-btn {
+            background: #f44336;
+        }
+
+        .selection-actions .clear-btn {
+            background: #9e9e9e;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .row-actions button {
+            padding: 0.3rem 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .row-actions .send-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .row-actions .reset-btn {
+            background: #ff9800;
+            color: white;
+        }
+
+        .row-actions .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .guest-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .original-name {
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
 </head>
 
 <body>
@@ -24,11 +99,43 @@
             </div>
         </header>
 
+        <!-- WhatsApp Control Panel -->
+        <section class="whatsapp-section">
+            <div class="container">
+                <div class="whatsapp-panel">
+                    <div class="whatsapp-status">
+                        <span id="whatsappStatusIndicator" class="status-indicator disconnected"></span>
+                        <span id="whatsappStatusText">לא מחובר</span>
+                    </div>
+                    <div class="whatsapp-controls">
+                        <button id="connectWhatsappBtn" class="wa-btn connect">📱 התחבר ל-WhatsApp</button>
+                        <button id="sendAllBtn" class="wa-btn send" disabled>📤 שלח לכולם</button>
+                        <button id="pauseBtn" class="wa-btn pause" disabled>⏸️ עצור</button>
+                        <button id="resumeBtn" class="wa-btn resume" disabled>▶️ המשך</button>
+                        <button id="stopBtn" class="wa-btn stop" disabled>⏹️ בטל</button>
+                    </div>
+                    <div class="whatsapp-progress" id="progressContainer" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="progressText">0/0</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-details">
+                            <span class="sent">✅ נשלחו: <span id="sentCount">0</span></span>
+                            <span class="failed">❌ נכשלו: <span id="failedCount">0</span></span>
+                            <span class="pending">⏳ ממתינים: <span id="pendingCount">0</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Statistics Cards -->
         <section class="stats-section">
             <div class="container">
                 <div class="stats-grid">
-                    <!-- Total Invitations Sent -->
                     <div class="stat-card" data-filter="sent">
                         <div class="stat-icon">📤</div>
                         <div class="stat-content">
@@ -36,8 +143,6 @@
                             <div class="stat-value" id="statSent">-</div>
                         </div>
                     </div>
-
-                    <!-- Failed Messages -->
                     <div class="stat-card error" data-filter="failed">
                         <div class="stat-icon">❌</div>
                         <div class="stat-content">
@@ -45,8 +150,6 @@
                             <div class="stat-value" id="statFailed">-</div>
                         </div>
                     </div>
-
-                    <!-- No Response (Pending) -->
                     <div class="stat-card warning" data-filter="noResponse">
                         <div class="stat-icon">⏳</div>
                         <div class="stat-content">
@@ -54,8 +157,6 @@
                             <div class="stat-value" id="statNoResponse">-</div>
                         </div>
                     </div>
-
-                    <!-- Total RSVPs -->
                     <div class="stat-card" data-filter="rsvp">
                         <div class="stat-icon">✅</div>
                         <div class="stat-content">
@@ -63,8 +164,6 @@
                             <div class="stat-value" id="statRsvp">-</div>
                         </div>
                     </div>
-
-                    <!-- Attending -->
                     <div class="stat-card success" data-filter="attending">
                         <div class="stat-icon">🎉</div>
                         <div class="stat-content">
@@ -72,8 +171,6 @@
                             <div class="stat-value" id="statAttending">-</div>
                         </div>
                     </div>
-
-                    <!-- Not Attending -->
                     <div class="stat-card" data-filter="notAttending">
                         <div class="stat-icon">😔</div>
                         <div class="stat-content">
@@ -81,8 +178,6 @@
                             <div class="stat-value" id="statNotAttending">-</div>
                         </div>
                     </div>
-
-                    <!-- Total Guests -->
                     <div class="stat-card">
                         <div class="stat-icon">👥</div>
                         <div class="stat-content">
@@ -90,17 +185,6 @@
                             <div class="stat-value" id="statTotalGuests">-</div>
                         </div>
                     </div>
-
-                    <!-- Vegetarian -->
-                    <div class="stat-card" data-filter="vegetarian">
-                        <div class="stat-icon">🥗</div>
-                        <div class="stat-content">
-                            <div class="stat-label">צמחוניים</div>
-                            <div class="stat-value" id="statVegetarian">-</div>
-                        </div>
-                    </div>
-
-                    <!-- With Children -->
                     <div class="stat-card" data-filter="children">
                         <div class="stat-icon">👶</div>
                         <div class="stat-content">
@@ -119,17 +203,26 @@
                     <input type="text" id="searchInput" placeholder="חיפוש לפי שם או טלפון..." class="search-input">
                     <select id="filterSelect" class="filter-select">
                         <option value="all">כל האורחים</option>
+                        <option value="pending">ממתין לשליחה</option>
                         <option value="sent">הזמנות נשלחו</option>
                         <option value="failed">נכשלו</option>
                         <option value="noResponse">לא ענו ⏳</option>
                         <option value="rsvp">אישרו הגעה</option>
                         <option value="attending">מגיעים</option>
                         <option value="notAttending">לא מגיעים</option>
-                        <option value="vegetarian">צמחוניים</option>
                         <option value="children">עם ילדים</option>
                     </select>
+                    <button id="syncSheetsBtn" class="sync-btn">🔄 סנכרון מGoogle Sheets</button>
                     <button id="copyPhonesBtn" class="copy-phones-btn">📋 העתק טלפונים</button>
                     <button id="exportBtn" class="export-btn">📥 ייצוא לאקסל</button>
+                </div>
+                <!-- Selection Actions Bar -->
+                <div class="selection-actions" id="selectionActions" style="display: none;">
+                    <span id="selectedCount">0 נבחרו</span>
+                    <button id="sendSelectedBtn" class="action-btn send-btn">📤 שלח לנבחרים</button>
+                    <button id="resetSelectedBtn" class="action-btn reset-btn">🔄 אפס נבחרים</button>
+                    <button id="deleteSelectedBtn" class="action-btn delete-btn">🗑️ מחק נבחרים</button>
+                    <button id="clearSelectionBtn" class="action-btn clear-btn">✖ בטל בחירה</button>
                 </div>
             </div>
         </section>
@@ -141,20 +234,22 @@
                     <table class="guests-table">
                         <thead>
                             <tr>
-                                <th>שם</th>
+                                <th><input type="checkbox" id="selectAllCheckbox" title="בחר הכל"></th>
+                                <th>שם מקורי</th>
+                                <th>שם מטופס</th>
                                 <th>טלפון</th>
                                 <th>סטטוס שליחה</th>
                                 <th>אישור הגעה</th>
                                 <th>מגיע?</th>
                                 <th>מספר אורחים</th>
-                                <th>צמחוני</th>
                                 <th>ילדים</th>
                                 <th>הערות</th>
+                                <th>פעולות</th>
                             </tr>
                         </thead>
                         <tbody id="guestsTableBody">
                             <tr>
-                                <td colspan="9" class="loading">טוען נתונים...</td>
+                                <td colspan="11" class="loading">טוען נתונים...</td>
                             </tr>
                         </tbody>
                     </table>

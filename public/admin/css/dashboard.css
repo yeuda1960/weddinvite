@@ -306,4 +306,155 @@
     .stats-grid {
         grid-template-columns: 1fr;
     }
+}.sync-btn {
+    padding: 12px 25px;
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sync-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.sync-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* WhatsApp Control Panel */
+.whatsapp-section {
+    padding: 20px 0;
+}
+
+.whatsapp-panel {
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+    border-radius: 15px;
+    padding: 25px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(37, 211, 102, 0.3);
+}
+
+.whatsapp-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.disconnected {
+    background: #ff6b6b;
+}
+
+.status-indicator.connecting {
+    background: #ffd93d;
+}
+
+.status-indicator.connected {
+    background: #6bff6b;
+}
+
+.whatsapp-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.wa-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.wa-btn.connect {
+    background: white;
+    color: #128c7e;
+}
+
+.wa-btn.send {
+    background: #075e54;
+    color: white;
+}
+
+.wa-btn.pause {
+    background: #ffd93d;
+    color: #333;
+}
+
+.wa-btn.resume {
+    background: #6bff6b;
+    color: #333;
+}
+
+.wa-btn.stop {
+    background: #ff6b6b;
+    color: white;
+}
+
+.wa-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.wa-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.whatsapp-progress {
+    margin-top: 20px;
+}
+
+.progress-bar {
+    height: 10px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: white;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.progress-details {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }

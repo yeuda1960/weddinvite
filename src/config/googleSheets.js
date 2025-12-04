@@ -5,17 +5,29 @@ const path = require('path');
 
 // Initialize Google Sheets API
 let auth;
+let sheetsConfigured = false;
 
-const credentialsPath = path.join(__dirname, '../../firebase-credentials.json');
+// Try different credential sources
+const firebaseCredentialsPath = path.join(__dirname, '../../firebase-credentials.json');
+const googleCredentialsPath = path.join(__dirname, '../../google-credentials.json');
 
-if (fs.existsSync(credentialsPath)) {
-    // Use Firebase service account credentials file (works for Google Sheets too)
+if (fs.existsSync(googleCredentialsPath)) {
+    // Use dedicated Google credentials file
     auth = new google.auth.GoogleAuth({
-        keyFile: credentialsPath,
+        keyFile: googleCredentialsPath,
         scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
     });
+    sheetsConfigured = true;
+    console.log('✅ Using google-credentials.json for Google Sheets');
+} else if (fs.existsSync(firebaseCredentialsPath)) {
+    // Use Firebase credentials (if shared with Google Cloud)
+    auth = new google.auth.GoogleAuth({
+        keyFile: firebaseCredentialsPath,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
+    sheetsConfigured = true;
     console.log('✅ Using firebase-credentials.json for Google Sheets');
-} else {
+} else if (process.env.FIREBASE_PRIVATE_KEY) {
     // Use environment variables
     const credentials = {
         type: "service_account",
@@ -28,9 +40,12 @@ if (fs.existsSync(credentialsPath)) {
         credentials: credentials,
         scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
     });
+    sheetsConfigured = true;
     console.log('✅ Using environment variables for Google Sheets');
+} else {
+    console.log('⚠️ No Google Sheets credentials found');
 }
 
-const sheets = google.sheets({ version: 'v4', auth });
+const sheets = sheetsConfigured ? google.sheets({ version: 'v4', auth }) : null;
 
-module.exports = { sheets, auth };
+module.exports = { sheets, auth, sheetsConfigured };
