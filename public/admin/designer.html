@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עיצוב הזמנה - RSVP Designer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Assistant:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/designer.css">
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="container">
+                <div class="header-content">
+                    <div>
+                        <h1>עיצוב עמוד ההזמנה 🎨</h1>
+                        <p class="header-subtitle">התאמה אישית של דף אישור ההגעה</p>
+                    </div>
+                    <nav class="admin-nav segmented-tabs">
+                        <a href="dashboard.html" class="nav-link segmented-tab">WhatsApp & אורחים</a>
+                        <a href="designer.html" class="nav-link segmented-tab active">עיצוב הזמנה</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <div class="container designer-container">
+            <!-- Sidebar Controls -->
+            <aside class="designer-sidebar">
+                <div class="sidebar-header">
+                    <h2>הגדרות עיצוב</h2>
+                    <div class="status-badge" id="saveStatus">שמור</div>
+                </div>
+
+                <div class="scrolling-content">
+                    <!-- General Settings -->
+                    <section class="control-group">
+                        <h3>תוכן וכיתוב</h3>
+                        <div class="form-group">
+                            <label>כותרת (שמות הזוג)</label>
+                            <input type="text" id="namesTitle" class="designer-input" placeholder="לדוגמה: יעל ודן">
+                        </div>
+                        <div class="form-group">
+                            <label>כיתוב פתיחה</label>
+                            <input type="text" id="welcomeText" class="designer-input"
+                                placeholder="ברוכים הבאים לחתונה שלנו">
+                        </div>
+                        <div class="form-group">
+                            <label>הודעת תודה (אחרי אישור)</label>
+                            <textarea id="thankYouText" class="designer-input" rows="3"
+                                placeholder="תודה שאישרתם..."></textarea>
+                        </div>
+                    </section>
+
+                    <!-- Event Details -->
+                    <section class="control-group">
+                        <h3>פרטי האירוע</h3>
+                        <div class="form-group">
+                            <label>תאריך</label>
+                            <input type="date" id="eventDate" class="designer-input">
+                        </div>
+                        <div class="form-group">
+                            <label>שעה</label>
+                            <input type="time" id="eventTime" class="designer-input">
+                        </div>
+                        <div class="form-group">
+                            <label>שם המקום</label>
+                            <input type="text" id="venueName" class="designer-input" placeholder="אולמי...">
+                        </div>
+                        <div class="form-group">
+                            <label>כתובת מלאה (לניווט)</label>
+                            <input type="text" id="venueAddress" class="designer-input" placeholder="רחוב, עיר...">
+                        </div>
+                        <div class="form-group">
+                            <label>קישור Google Maps (אופציונלי)</label>
+                            <input type="text" id="mapsLink" class="designer-input" dir="ltr">
+                        </div>
+                    </section>
+
+                    <!-- Media & Style -->
+                    <section class="control-group">
+                        <h3>מדיה וסגנון</h3>
+
+                        <div class="form-group">
+                            <label>אנימציית פתיחה</label>
+                            <select id="introAnimation" class="designer-input">
+                                <option value="envelope">מעטפה נפתחת</option>
+                                <option value="heart">לב פועם</option>
+                                <option value="rings">טבעות</option>
+                                <option value="none">ללא</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>מוזיקת רקע</label>
+                            <div class="music-upload-section">
+                                <!-- File Upload (Primary) -->
+                                <div class="upload-area">
+                                    <input type="file" id="musicFile" accept="audio/mp3,audio/mpeg"
+                                        style="display: none;">
+                                    <button type="button" class="upload-btn"
+                                        onclick="document.getElementById('musicFile').click()">
+                                        📁 העלה קובץ MP3
+                                    </button>
+                                    <div id="uploadStatus" class="upload-status"></div>
+                                    <div id="currentMusic" class="current-music" style="display: none;">
+                                        <span id="musicFileName"></span>
+                                        <button type="button" class="test-play-btn" id="testPlayBtn">▶️ נגן</button>
+                                        <button type="button" class="remove-music-btn" id="removeMusicBtn">🗑️</button>
+                                    </div>
+                                </div>
+
+                                <!-- Advanced: Direct URL -->
+                                <details class="advanced-option">
+                                    <summary>מתקדם: הדבק קישור ישיר</summary>
+                                    <input type="text" id="musicUrl" class="designer-input" placeholder="https://...mp3"
+                                        dir="ltr">
+                                    <small>קישור ישיר לקובץ MP3 (אופציונלי)</small>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>צבע ראשי</label>
+                            <input type="color" id="primaryColor" class="designer-input color-picker" value="#D4AF37">
+                        </div>
+
+                        <div class="form-group">
+                            <label>פונט</label>
+                            <select id="fontFamily" class="designer-input" style="font-family: 'Heebo', sans-serif;">
+                                <option value="Heebo">Heebo (מודרני נקי)</option>
+                                <option value="Assistant">Assistant (קריא ונעים)</option>
+                                <option value="Rubik">Rubik (עגול וידידותי)</option>
+                                <option value="Frank Ruhl Libre">Frank Ruhl (קלאסי)</option>
+                            </select>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="sidebar-footer">
+                    <button id="saveDraftBtn" class="action-btn secondary">💾 שמור טיוטה</button>
+                    <button id="publishBtn" class="action-btn primary">🚀 פרסם</button>
+                    <button id="resetBtn" class="action-btn danger">🔄 אפס</button>
+                </div>
+            </aside>
+
+            <!-- Preview Area -->
+            <main class="designer-preview">
+                <div class="preview-header">
+                    <h3>תצוגה מקדימה (טיוטה)</h3>
+                    <div class="preview-actions">
+                        <button id="refreshPreviewBtn" class="icon-btn" title="רענן">↻</button>
+                        <a href="../rsvp.html?preview=draft" target="_blank" class="text-link">פתח בחלון חדש ↗</a>
+                    </div>
+                </div>
+                <div class="device-frame">
+                    <iframe id="previewFrame" src="../rsvp.html?preview=draft" title="RSVP Preview"></iframe>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <script src="js/designer.js"></script>
+</body>
+
+</html>

@@ -9,10 +9,23 @@ service cloud.firestore {
       allow write: if true;
     }
     
+    // Settings collection - for custom message template
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
     // Statistics collection - read only for dashboard
     match /statistics/{statId} {
       allow read: if true;
       allow write: if false;
     }
+    
+    // Invitation Page Designer Configuration
+    match /invitationPageConfig/{docId} {
+      allow read: if true;  // Public read for preview
+      allow write: if true; // Allow admin writes (add auth later if needed)
+    }
   }
 }
+

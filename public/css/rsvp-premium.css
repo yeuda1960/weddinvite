@@ -1,0 +1,375 @@
+/* ============================================
+   PREMIUM RSVP THEME
+   ============================================ */
+:root {
+    --primary-color: #D4AF37;
+    /* Gold Default */
+    --surface-color: #ffffff;
+    --background-color: #fafafa;
+    --text-color: #333333;
+    --text-muted: #666666;
+    --border-radius: 16px;
+    --font-family: 'Heebo', sans-serif;
+}
+
+body {
+    background-color: var(--background-color);
+    font-family: var(--font-family);
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* ============================================
+   INTRO OVERLAY
+   ============================================ */
+.intro-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: #fff;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s ease, visibility 0.8s;
+}
+
+.intro-content {
+    text-align: center;
+    cursor: pointer;
+}
+
+.intro-title {
+    font-size: 1.5rem;
+    font-weight: 300;
+    margin-top: 1rem;
+    color: var(--text-color);
+    letter-spacing: 1px;
+}
+
+.intro-animation {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+}
+
+.tap-hint {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+}
+
+/* ============================================
+   FLOATING AUDIO
+   ============================================ */
+.music-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    /* RTL aware? check direction */
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border: none;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+}
+
+[dir="rtl"] .music-toggle {
+    right: auto;
+    left: 20px;
+}
+
+.music-toggle:active {
+    transform: scale(0.9);
+}
+
+.music-playing {
+    animation: spin 4s linear infinite;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.rsvp-hero {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 1rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(212, 175, 55, 0.05) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-subtitle {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.hero-title {
+    font-family: var(--font-family);
+    /* Dynamic */
+    font-size: 3.5rem;
+    line-height: 1.1;
+    margin: 0.5rem 0 1.5rem 0;
+    color: var(--text-color);
+}
+
+.hero-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.5rem 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+
+.separator {
+    color: var(--primary-color);
+}
+
+/* ============================================
+   DETAILS CARD
+   ============================================ */
+.details-card {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.details-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.details-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.3rem;
+    background: rgba(212, 175, 55, 0.1);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.detail-text strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+}
+
+.detail-text p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.nav-btn {
+    flex: 1;
+    max-width: 140px;
+    padding: 0.8rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: transform 0.2s;
+}
+
+.nav-btn:active {
+    transform: scale(0.98);
+}
+
+.nav-btn.waze {
+    background: #33ccff;
+    background: linear-gradient(135deg, #33ccff 0%, #0099ff 100%);
+    color: white;
+}
+
+.nav-btn.google {
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #444;
+}
+
+/* ============================================
+   RSVP FORM
+   ============================================ */
+/* Reuse existing styles but enhance container */
+.rsvp-card {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.card-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.subtitle {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+/* Enhancing inputs */
+.form-group input[type="text"],
+.form-group input[type="tel"],
+.form-group input[type="number"],
+.form-group textarea {
+    border: 1px solid #eee;
+    background: #fcfcfc;
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    background: #fff;
+    border-color: var(--primary-color);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom Radios enhancement */
+.radio-option {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.2s;
+}
+
+.radio-option:has(input:checked) {
+    border-color: var(--primary-color);
+    background: rgba(212, 175, 55, 0.05);
+}
+
+.submit-button {
+    background: var(--primary-color);
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.submit-button:disabled {
+    opacity: 0.7;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.rsvp-footer {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+
+.footer-credit {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-top: 1rem;
+}
+
+/* ============================================
+   ANIMATIONS & UTILS
+   ============================================ */
+.section-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.section-reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+    .rsvp-hero {
+        min-height: 50vh;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .details-card,
+    .rsvp-card {
+        padding: 1.5rem;
+    }
+}

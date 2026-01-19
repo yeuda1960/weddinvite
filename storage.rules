@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow anyone to read invitation music files
+    match /invitation-music/{fileName} {
+      allow read: if true;
+      allow write: if true; // Allow uploads (add auth later if needed)
+    }
+    
+    // Default: deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

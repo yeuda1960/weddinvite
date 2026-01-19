@@ -52,6 +52,73 @@ app.get('/api/health', (req, res) => {
 });
 
 // ============================================
+// CUSTOM MESSAGE SETTINGS
+// ============================================
+let cachedCustomMessage = null; // Cache the message server-side
+
+// Save custom message
+app.post('/api/settings/message', async (req, res) => {
+    try {
+        const { message } = req.body;
+
+        if (!message || typeof message !== 'string') {
+            return res.status(400).json({ success: false, error: 'Message is required' });
+        }
+
+        // Save to Firestore
+        await db.collection('settings').doc('customMessage').set({
+            message: message,
+            updatedAt: new Date()
+        });
+
+        // Update cache
+        cachedCustomMessage = message;
+
+        console.log('✅ Custom message saved');
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ Error saving message:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get custom message
+app.get('/api/settings/message', async (req, res) => {
+    try {
+        if (cachedCustomMessage) {
+            return res.json({ success: true, message: cachedCustomMessage });
+        }
+
+        const doc = await db.collection('settings').doc('customMessage').get();
+        if (doc.exists && doc.data().message) {
+            cachedCustomMessage = doc.data().message;
+            return res.json({ success: true, message: cachedCustomMessage });
+        }
+
+        res.json({ success: true, message: null });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Helper function to get custom message (for internal use)
+async function getCustomMessage() {
+    if (cachedCustomMessage) return cachedCustomMessage;
+
+    try {
+        const doc = await db.collection('settings').doc('customMessage').get();
+        if (doc.exists && doc.data().message) {
+            cachedCustomMessage = doc.data().message;
+            return cachedCustomMessage;
+        }
+    } catch (error) {
+        console.error('Error fetching custom message:', error);
+    }
+    return null;
+}
+
+
+// ============================================
 // GOOGLE SHEETS SYNC
 // ============================================
 app.post('/api/sync-sheets', async (req, res) => {
@@ -272,11 +339,15 @@ app.post('/api/whatsapp/send-single', async (req, res) => {
         const imagePath = process.env.INVITATION_IMAGE_PATH || null;
         const personalizedUrl = `${rsvpUrl}?phone=${phone}`;
 
+        // Get custom message
+        const customMessage = await getCustomMessage();
+
         const result = await sendingService.whatsapp.sendInvitation(
             phone,
             guest.originalName || guest.name,
             personalizedUrl,
-            imagePath
+            imagePath,
+            customMessage
         );
 
         if (result.success) {
@@ -294,6 +365,7 @@ app.post('/api/whatsapp/send-single', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 
 // Reset guests (keeps name/phone, resets everything else)
 app.post('/api/guests/reset', async (req, res) => {

@@ -70,6 +70,21 @@ class SendingService {
     }
 
     /**
+     * Get custom message from Firestore settings
+     */
+    async getCustomMessage() {
+        try {
+            const doc = await this.db.collection('settings').doc('customMessage').get();
+            if (doc.exists && doc.data().message) {
+                return doc.data().message;
+            }
+        } catch (error) {
+            console.error('Error fetching custom message:', error);
+        }
+        return null;
+    }
+
+    /**
      * Send invitations to all pending guests
      */
     async sendToAllGuests(rsvpUrl, imagePath) {
@@ -86,6 +101,12 @@ class SendingService {
         this.isPaused = false;
 
         try {
+            // Get custom message from settings
+            const customMessage = await this.getCustomMessage();
+            if (customMessage) {
+                console.log('📝 Using custom message template');
+            }
+
             // Get ALL guests and filter for those who need messages
             const allSnapshot = await this.db.collection('guests').get();
 
@@ -134,8 +155,8 @@ class SendingService {
 
                 if (this.shouldStop) break;
 
-                // Send to this guest with retries
-                const result = await this.sendWithRetry(guest, rsvpUrl, imagePath);
+                // Send to this guest with retries (pass custom message)
+                const result = await this.sendWithRetry(guest, rsvpUrl, imagePath, customMessage);
 
                 // Update progress
                 if (result.success) {
@@ -168,8 +189,12 @@ class SendingService {
 
     /**
      * Send message to a single guest with retry logic
+     * @param {Object} guest - Guest data object
+     * @param {string} rsvpUrl - RSVP page URL
+     * @param {string} imagePath - Path to invitation image
+     * @param {string} customMessage - Custom message template (optional)
      */
-    async sendWithRetry(guest, rsvpUrl, imagePath) {
+    async sendWithRetry(guest, rsvpUrl, imagePath, customMessage = null) {
         let lastError = null;
 
         for (let attempt = 1; attempt <= this.config.retryAttempts; attempt++) {
@@ -181,15 +206,16 @@ class SendingService {
                 const personalizedUrl = `${rsvpUrl}?phone=${guest.phone}`;
                 const result = await this.whatsapp.sendInvitation(
                     guest.phone,
-                    guest.name,
+                    guest.originalName || guest.name,
                     personalizedUrl,
-                    imagePath
+                    imagePath,
+                    customMessage
                 );
 
                 if (result.success) {
                     // Success! Update status
                     await this.updateGuestStatus(guest.id, 'sent', attempt);
-                    console.log(`✅ [${this.currentProgress.sent + 1}/${this.currentProgress.total}] Sent to ${guest.name}`);
+                    console.log(`✅ [${this.currentProgress.sent + 1}/${this.currentProgress.total}] Sent to ${guest.originalName || guest.name}`);
                     return { success: true };
                 } else {
                     throw new Error(result.error || 'Send failed');
@@ -197,7 +223,7 @@ class SendingService {
 
             } catch (error) {
                 lastError = error;
-                console.log(`⚠️ Attempt ${attempt}/${this.config.retryAttempts} failed for ${guest.name}: ${error.message}`);
+                console.log(`⚠️ Attempt ${attempt}/${this.config.retryAttempts} failed for ${guest.originalName || guest.name}: ${error.message}`);
 
                 if (attempt < this.config.retryAttempts) {
                     // Exponential backoff
@@ -210,7 +236,7 @@ class SendingService {
 
         // All retries failed
         await this.updateGuestStatus(guest.id, 'failed', this.config.retryAttempts, lastError?.message);
-        console.log(`❌ Failed to send to ${guest.name} after ${this.config.retryAttempts} attempts`);
+        console.log(`❌ Failed to send to ${guest.originalName || guest.name} after ${this.config.retryAttempts} attempts`);
         return { success: false, error: lastError?.message };
     }
 

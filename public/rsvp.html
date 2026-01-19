@@ -12,6 +12,10 @@
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Assistant:wght@300;400;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/rsvp-premium.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Rubik:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
     <style>
         /* Mobile-first fixes */
         * {
@@ -51,11 +55,67 @@
 </head>
 
 <body>
-    <div class="rsvp-page">
+    <!-- Loading / Intro Overlay -->
+    <div id="introOverlay" class="intro-overlay">
+        <div class="intro-content">
+            <div id="introAnimationContainer" class="intro-animation">
+                <!-- Animation injected here -->
+            </div>
+            <h1 id="introTitle" class="intro-title">Loading...</h1>
+            <p class="tap-hint">לחץ לפתיחה ✨</p>
+        </div>
+    </div>
+
+    <!-- Audio Player (Floating) -->
+    <button id="musicToggle" class="music-toggle" style="display: none;">
+        <span class="music-icon">🎵</span>
+    </button>
+    <audio id="bgMusic" loop preload="auto"></audio>
+
+    <!-- Main Content - VISIBLE BY DEFAULT (intro overlay will cover if needed) -->
+    <div id="mainContent" class="rsvp-page">
+
+        <!-- Hero Section -->
+        <header class="rsvp-hero">
+            <div class="hero-content">
+                <p id="welcomeTextDisplay" class="hero-subtitle">ברוכים הבאים</p>
+                <h1 id="namesTitleDisplay" class="hero-title">Names</h1>
+                <div class="hero-date">
+                    <span id="eventDateDisplay">DD.MM.YYYY</span>
+                    <span class="separator">•</span>
+                    <span id="eventTimeDisplay">00:00</span>
+                </div>
+            </div>
+        </header>
+
         <div class="container">
-            <div class="rsvp-card">
+            <!-- Event Details Card -->
+            <div class="details-card section-reveal">
+                <h2>פרטי האירוע</h2>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-icon">📍</span>
+                        <div class="detail-text">
+                            <strong id="venueNameDisplay">Venue Name</strong>
+                            <p id="venueAddressDisplay">Address City</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <a id="wazeBtn" href="#" target="_blank" class="nav-btn waze">
+                        <span class="icon">🚙</span> Waze
+                    </a>
+                    <a id="mapsBtn" href="#" target="_blank" class="nav-btn google">
+                        <span class="icon">🗺️</span> Maps
+                    </a>
+                </div>
+            </div>
+
+            <!-- RSVP Form (Original Logic Preserved) -->
+            <div class="rsvp-card section-reveal">
                 <div class="card-header">
-                    <h1>אישור הגעה 💌</h1>
+                    <h2>אישור הגעה 💌</h2>
                     <p class="subtitle">נשמח לדעת אם תוכל/י להגיע</p>
                 </div>
 
@@ -130,6 +190,11 @@
                     <div id="errorMessage" class="error-message" style="display: none;"></div>
                 </form>
             </div>
+
+            <footer class="rsvp-footer">
+                <p id="thankYouTextDisplay" style="display: none;"></p>
+                <div class="footer-credit">נוצר באהבה ❤️</div>
+            </footer>
         </div>
     </div>
 

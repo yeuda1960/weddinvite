@@ -51,13 +51,16 @@ const statAttending = document.getElementById('statAttending');
 const statNotAttending = document.getElementById('statNotAttending');
 const statTotalGuests = document.getElementById('statTotalGuests');
 const statChildren = document.getElementById('statChildren');
+const statRsvpWithoutMessage = document.getElementById('statRsvpWithoutMessage');
 
 // Load data on page load with REAL-TIME updates
 window.addEventListener('DOMContentLoaded', () => {
     setupRealtimeListener();
     checkWhatsAppStatus();
     setInterval(checkWhatsAppStatus, 5000); // Check every 5 seconds
+    initMessageEditor(); // Initialize message editor
 });
+
 
 // Setup real-time listener for Firestore
 function setupRealtimeListener() {
@@ -122,6 +125,8 @@ function updateStatistics() {
         notAttending: allGuests.filter(g => g.attending === false).length,
         totalGuests: allGuests.reduce((sum, g) => sum + (g.numberOfGuests || 0), 0),
         children: allGuests.filter(g => g.hasChildren === true).length,
+        // RSVP submitted but message was never sent via system
+        rsvpWithoutMessage: allGuests.filter(g => g.rsvpSubmitted && g.messageStatus !== 'sent').length,
     };
 
     statSent.textContent = stats.sent;
@@ -132,6 +137,7 @@ function updateStatistics() {
     statNotAttending.textContent = stats.notAttending;
     statTotalGuests.textContent = stats.totalGuests;
     statChildren.textContent = stats.children;
+    if (statRsvpWithoutMessage) statRsvpWithoutMessage.textContent = stats.rsvpWithoutMessage;
 }
 
 // Render table
@@ -264,6 +270,10 @@ function applyFilters(searchTerm, filterType) {
                 break;
             case 'children':
                 matchesFilter = guest.hasChildren === true;
+                break;
+            case 'rsvpWithoutMessage':
+                // RSVP submitted but message was never sent via system
+                matchesFilter = guest.rsvpSubmitted === true && guest.messageStatus !== 'sent';
                 break;
             default:
                 matchesFilter = true;
@@ -575,8 +585,8 @@ clearSelectionBtn.addEventListener('click', () => {
     updateSelectionUI();
 });
 
-// Send to single guest
-async function sendToGuest(phone) {
+// Send to single guest (GLOBAL - called from onclick)
+window.sendToGuest = async function (phone) {
     if (!confirm('לשלוח הזמנה לאורח זה?')) return;
 
     try {
@@ -597,8 +607,8 @@ async function sendToGuest(phone) {
     }
 }
 
-// Reset single guest
-async function resetGuest(phone) {
+// Reset single guest (GLOBAL - called from onclick)
+window.resetGuest = async function (phone) {
     if (!confirm('לאפס את האורח? (תשובת RSVP תימחק)')) return;
 
     try {
@@ -680,8 +690,8 @@ resetSelectedBtn.addEventListener('click', async () => {
     }
 });
 
-// Delete single guest
-async function deleteGuest(phone) {
+// Delete single guest (GLOBAL - called from onclick)
+window.deleteGuest = async function (phone) {
     if (!confirm('למחוק את האורח לצמיתות?')) return;
 
     try {
@@ -730,3 +740,132 @@ if (deleteSelectedBtn) {
         }
     });
 }
+
+// ============================================
+// MESSAGE EDITOR FUNCTIONS
+// ============================================
+
+const DEFAULT_MESSAGE = `שלום {שם}! 🎉
+
+את/ה מוזמן/ת לחתונה שלנו! 💒
+
+אנחנו שמחים להזמין אותך לחגוג איתנו את היום המיוחד שלנו.
+
+📅 פרטי האירוע מצורפים בתמונה
+
+🔗 אנא אשר/י הגעה בקישור הבא:
+{קישור}
+
+נשמח לראותך! ❤️`;
+
+// Initialize message editor
+function initMessageEditor() {
+    const toggleHeader = document.getElementById('toggleMessageEditor');
+    const toggleIcon = document.getElementById('toggleIcon');
+    const editorContent = document.getElementById('messageEditorContent');
+    const messageInput = document.getElementById('customMessageInput');
+    const saveBtn = document.getElementById('saveMessageBtn');
+    const resetBtn = document.getElementById('resetMessageBtn');
+    const saveStatus = document.getElementById('messageSaveStatus');
+
+    // Toggle collapse/expand
+    if (toggleHeader) {
+        toggleHeader.addEventListener('click', () => {
+            const isOpen = editorContent.style.display !== 'none';
+            editorContent.style.display = isOpen ? 'none' : 'block';
+            toggleIcon.classList.toggle('open', !isOpen);
+        });
+    }
+
+    // Load saved message from server
+    loadCustomMessage();
+
+    // Save message
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const message = messageInput.value;
+            if (!message || !message.trim()) {
+                showSaveStatus('❌ ההודעה לא יכולה להיות ריקה', 'error');
+                return;
+            }
+
+            try {
+                // Save via server API (uses admin SDK, bypasses Firestore rules)
+                const response = await fetch('/api/settings/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSaveStatus('✅ ההודעה נשמרה בהצלחה!', 'success');
+                } else {
+                    throw new Error(data.error || 'Save failed');
+                }
+            } catch (error) {
+                console.error('Error saving message:', error);
+                showSaveStatus('❌ שגיאה בשמירת ההודעה', 'error');
+            }
+        });
+    }
+
+    // Reset to default
+    if (resetBtn) {
+        resetBtn.addEventListener('click', async () => {
+            if (!confirm('האם לאפס להודעה המקורית?')) return;
+
+            messageInput.value = DEFAULT_MESSAGE;
+
+            try {
+                // Reset via server API
+                const response = await fetch('/api/settings/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: DEFAULT_MESSAGE })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSaveStatus('🔄 ההודעה אופסה לברירת מחדל', 'success');
+                } else {
+                    throw new Error(data.error || 'Reset failed');
+                }
+            } catch (error) {
+                console.error('Error resetting message:', error);
+                showSaveStatus('❌ שגיאה באיפוס ההודעה', 'error');
+            }
+        });
+    }
+
+    function showSaveStatus(text, type) {
+        if (saveStatus) {
+            saveStatus.textContent = text;
+            saveStatus.className = 'save-status ' + type;
+            setTimeout(() => {
+                saveStatus.textContent = '';
+                saveStatus.className = 'save-status';
+            }, 3000);
+        }
+    }
+}
+
+// Load custom message from server API
+async function loadCustomMessage() {
+    const messageInput = document.getElementById('customMessageInput');
+    if (!messageInput) return;
+
+    try {
+        const response = await fetch('/api/settings/message');
+        const data = await response.json();
+
+        if (data.success && data.message) {
+            messageInput.value = data.message;
+        }
+    } catch (error) {
+        console.log('No custom message found, using default');
+    }
+}
+

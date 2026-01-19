@@ -77,14 +77,27 @@ class WhatsAppService {
 
     /**
      * Send invitation message with image
+     * @param {string} phone - Guest phone number
+     * @param {string} guestName - Guest name
+     * @param {string} rsvpUrl - RSVP page URL
+     * @param {string} imagePath - Path to invitation image
+     * @param {string} customMessage - Custom message template (optional)
      */
-    async sendInvitation(phone, guestName, rsvpUrl, imagePath) {
+    async sendInvitation(phone, guestName, rsvpUrl, imagePath, customMessage = null) {
         try {
             // Format phone number for WhatsApp (must include country code)
             const chatId = `${phone}@c.us`;
 
-            // Create personalized message in Hebrew
-            const message = `
+            let message;
+
+            if (customMessage) {
+                // Use custom message with placeholder replacement
+                message = customMessage
+                    .replace(/\{שם\}/g, guestName)
+                    .replace(/\{קישור\}/g, rsvpUrl);
+            } else {
+                // Default message if no custom message provided
+                message = `
 שלום ${guestName}! 🎉
 
 את/ה מוזמן/ת לחתונה שלנו! 💒
@@ -97,7 +110,8 @@ class WhatsAppService {
 ${rsvpUrl}
 
 נשמח לראותך! ❤️
-      `.trim();
+          `.trim();
+            }
 
             // Send image with caption
             if (imagePath && fs.existsSync(imagePath)) {

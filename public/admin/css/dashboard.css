@@ -25,6 +25,45 @@
     opacity: 0.95;
 }
 
+/* UI Components: Segmented Tabs */
+.segmented-tabs {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px;
+    border-radius: 50px;
+    display: inline-flex;
+    gap: 4px;
+    backdrop-filter: blur(5px);
+}
+
+.segmented-tab {
+    padding: 8px 20px;
+    border-radius: 40px;
+    color: rgba(255, 255, 255, 0.9) !important;
+    /* Force readable text */
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.segmented-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.15);
+    color: white !important;
+}
+
+.segmented-tab.active {
+    background: white;
+    color: var(--primary) !important;
+    /* Force primary color on active */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-weight: 700;
+    transform: scale(1.02);
+}
+
 /* Statistics Section */
 .stats-section {
     padding: 40px 0;
@@ -306,7 +345,9 @@
     .stats-grid {
         grid-template-columns: 1fr;
     }
-}.sync-btn {
+}
+
+.sync-btn {
     padding: 12px 25px;
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     color: white;
@@ -419,7 +460,7 @@
 
 .wa-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .whatsapp-progress {
@@ -428,7 +469,7 @@
 
 .progress-bar {
     height: 10px;
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     overflow: hidden;
 }
@@ -455,6 +496,115 @@
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Message Editor Section */
+.message-editor-section {
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.message-editor-header {
+    padding: 12px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.message-editor-header:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-icon {
+    transition: transform 0.3s;
+}
+
+.toggle-icon.open {
+    transform: rotate(180deg);
+}
+
+.message-editor-content {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.message-help {
+    font-size: 13px;
+    margin-bottom: 12px;
+    opacity: 0.9;
+}
+
+.message-help p {
+    margin: 5px 0;
+}
+
+.message-help code {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.message-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+    resize: vertical;
+    background: white;
+    color: #333;
+}
+
+.message-textarea:focus {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.message-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.wa-btn.save-msg {
+    background: #4ade80;
+    color: #166534;
+}
+
+.wa-btn.reset-msg {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.save-status {
+    margin-top: 10px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+.save-status.success {
+    color: #a7f3d0;
+}
+
+.save-status.error {
+    color: #fecaca;
 }
