@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Assets Validator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #D4AF37;
+            padding-bottom: 0.5rem;
+        }
+        .asset {
+            background: white;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .asset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .asset-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .status.found {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.missing {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.checking {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .asset-path {
+            font-family: monospace;
+            background: #f8f8f8;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
+        .asset-info {
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .summary {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .summary-status {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .summary-text {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn {
+            display: inline-block;
+            background: #D4AF37;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 1rem;
+            font-weight: 600;
+        }
+        .btn:hover {
+            background: #b8941f;
+        }
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 Premium RSVP Assets Validator</h1>
+    
+    <div class="instructions">
+        <strong>📋 What this does:</strong> Checks if all premium media assets exist and are accessible.
+        <br><br>
+        <strong>🎯 Expected location:</strong> All files should be in <code>/public/media/</code>
+    </div>
+
+    <div id="assets-container">
+        <!-- Assets will be listed here -->
+    </div>
+
+    <div class="summary" id="summary">
+        <div class="summary-status">⏳</div>
+        <div class="summary-text">Checking assets...</div>
+    </div>
+
+    <script>
+        const ASSETS = [
+            {
+                name: 'Intro Video',
+                path: '/media/intro/envelope.mp4',
+                required: true,
+                info: 'MP4 video, < 5MB, 3-5 seconds, envelope opening animation'
+            },
+            {
+                name: 'Background Music',
+                path: '/media/audio/All_You_Need_Is_Love-104256-mobiles24.mp3',
+                required: true,
+                info: 'MP3 audio, < 3MB, 2-4 minutes, romantic wedding music'
+            },
+            {
+                name: 'Top Lottie Decoration',
+                path: '/media/lottie/event-side-decoration.json',
+                required: true,
+                info: 'Lottie JSON, < 200KB, top header decoration'
+            },
+            {
+                name: 'Flowers Decoration',
+                path: '/media/lottie/flowers.json',
+                required: false,
+                info: 'Lottie JSON, < 200KB, corner floral decoration (optional)'
+            }
+        ];
+
+        async function checkAsset(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return {
+                    exists: response.ok,
+                    status: response.status,
+                    size: response.headers.get('content-length'),
+                    type: response.headers.get('content-type')
+                };
+            } catch (error) {
+                return {
+                    exists: false,
+                    error: error.message
+                };
+            }
+        }
+
+        function formatSize(bytes) {
+            if (!bytes) return 'Unknown';
+            const mb = bytes / (1024 * 1024);
+            if (mb > 1) return `${mb.toFixed(2)} MB`;
+            const kb = bytes / 1024;
+            return `${kb.toFixed(2)} KB`;
+        }
+
+        async function validateAssets() {
+            const container = document.getElementById('assets-container');
+            const results = [];
+
+            for (const asset of ASSETS) {
+                const assetDiv = document.createElement('div');
+                assetDiv.className = 'asset';
+                assetDiv.innerHTML = `
+                    <div class="asset-header">
+                        <div class="asset-name">
+                            ${asset.name}
+                            ${asset.required ? '<span style="color: red;">*</span>' : '<span style="color: #999;">(optional)</span>'}
+                        </div>
+                        <div class="status checking">Checking...</div>
+                    </div>
+                    <div class="asset-path">${asset.path}</div>
+                    <div class="asset-info">${asset.info}</div>
+                `;
+                container.appendChild(assetDiv);
+
+                const result = await checkAsset(asset.path);
+                results.push({ ...asset, ...result });
+
+                const statusEl = assetDiv.querySelector('.status');
+                if (result.exists) {
+                    statusEl.className = 'status found';
+                    statusEl.textContent = '✓ Found';
+                    
+                    if (result.size) {
+                        const sizeInfo = document.createElement('div');
+                        sizeInfo.className = 'asset-info';
+                        sizeInfo.style.marginTop = '0.5rem';
+                        sizeInfo.innerHTML = `<strong>Size:</strong> ${formatSize(result.size)} | <strong>Type:</strong> ${result.type}`;
+                        assetDiv.appendChild(sizeInfo);
+                    }
+                } else {
+                    statusEl.className = 'status missing';
+                    statusEl.textContent = '✗ Missing';
+                    
+                    const errorInfo = document.createElement('div');
+                    errorInfo.className = 'asset-info';
+                    errorInfo.style.color = '#dc3545';
+                    errorInfo.style.marginTop = '0.5rem';
+                    errorInfo.innerHTML = `<strong>Status:</strong> ${result.status || 'File not found'} ${result.error ? `(${result.error})` : ''}`;
+                    assetDiv.appendChild(errorInfo);
+                }
+            }
+
+            updateSummary(results);
+        }
+
+        function updateSummary(results) {
+            const summary = document.getElementById('summary');
+            const requiredAssets = results.filter(r => r.required);
+            const requiredFound = requiredAssets.filter(r => r.exists).length;
+            const optionalAssets = results.filter(r => !r.required);
+            const optionalFound = optionalAssets.filter(r => r.exists).length;
+
+            const allRequiredFound = requiredFound === requiredAssets.length;
+
+            if (allRequiredFound) {
+                summary.innerHTML = `
+                    <div class="summary-status">✅</div>
+                    <div class="summary-text">All Critical Assets Found!</div>
+                    <div style="color: #666; margin-top: 0.5rem;">
+                        Required: ${requiredFound}/${requiredAssets.length} | 
+                        Optional: ${optionalFound}/${optionalAssets.length}
+                    </div>
+                    <a href="/rsvp.html?debug=true" class="btn">Test RSVP Page →</a>
+                `;
+            } else {
+                const missing = requiredAssets.filter(r => !r.exists);
+                summary.innerHTML = `
+                    <div class="summary-status">❌</div>
+                    <div class="summary-text">Missing Critical Assets</div>
+                    <div style="color: #dc3545; margin-top: 0.5rem;">
+                        ${missing.length} required file(s) not found
+                    </div>
+                    <div style="margin-top: 1rem; text-align: left; background: #fff3cd; padding: 1rem; border-radius: 8px;">
+                        <strong>Next Steps:</strong>
+                        <ol style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                            <li>Upload missing files to the paths shown above</li>
+                            <li>See <code>/docs/PREMIUM_ASSETS.md</code> for specifications</li>
+                            <li>Refresh this page to re-check</li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+
+        // Run validation on page load
+        validateAssets();
+    </script>
+</body>
+</html>

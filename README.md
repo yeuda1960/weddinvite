@@ -43,11 +43,12 @@ npm run deploy
 
 ✅ **WhatsApp Automation** - Send personalized invitations to 400+ guests  
 ✅ **Google Sheets Integration** - Manage guest list in Google Sheets  
-✅ **Beautiful RSVP Website** - Hebrew RTL responsive design  
+✅ **Premium RSVP Website** - Elegant Hebrew RTL design with video intro, animations & music  
 ✅ **Admin Dashboard** - Track responses and statistics  
 ✅ **Real-time Updates** - Firebase Firestore database  
 ✅ **Smart Filtering** - Filter guests by status, attendance, dietary needs  
 ✅ **Export to Excel** - Download guest data as CSV  
+🎬 **Rich Media** - Video intro overlay, Lottie animations, background music  
 
 ## Tech Stack
 
@@ -179,7 +180,39 @@ INVITATION_IMAGE_PATH=./assets/invitation.jpg
 2. Add your wedding invitation image as `invitation.jpg`
 3. Recommended size: 1080x1920 pixels (portrait)
 
-### 8. Configure Firebase in Frontend
+### 8. Add Premium Media Assets (RSVP Page)
+
+The RSVP page now features premium UI with video intro, animations, and music. Add these files:
+
+1. **Intro Video** (Required):
+   - File: `public/media/intro/envelope.mp4`
+   - Format: MP4, < 5MB, 3-5 seconds
+   - Content: Envelope opening animation
+
+2. **Background Music** (Required):
+   - File: `public/media/audio/All_You_Need_Is_Love-104256-mobiles24.mp3`
+   - Format: MP3, < 3MB, 2-4 minutes
+   - Content: Romantic wedding music
+
+3. **Top Lottie Decoration** (Important):
+   - File: `public/media/lottie/event-side-decoration.json`
+   - Format: Lottie JSON, < 200KB
+   - Content: Top header decoration
+
+4. **Flowers Decoration** (Optional):
+   - File: `public/media/lottie/flowers.json`
+   - Format: Lottie JSON, < 200KB
+   - Content: Corner floral decoration
+
+**Quick Validation:**
+```bash
+# Check assets exist and are accessible:
+open http://localhost:5000/media/validate-assets.html
+```
+
+**See detailed guide:** [`/docs/PREMIUM_ASSETS.md`](./docs/PREMIUM_ASSETS.md)
+
+### 9. Configure Firebase in Frontend
 
 Edit these files and replace `YOUR_API_KEY`, `YOUR_SENDER_ID`, `YOUR_APP_ID`:
 
