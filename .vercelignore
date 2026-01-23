@@ -1,0 +1,12 @@
+# Ignore Node.js backend - should not run on Vercel
+src/
+node_modules/
+.wwebjs_auth/
+*.json
+!vercel.json
+!package.json
+.env
+.env.*
+firebase-credentials.json
+google-credentials.json
+assets/

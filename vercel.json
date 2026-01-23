@@ -1,50 +1,12 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "framework": null,
-  "buildCommand": null,
-  "installCommand": null,
-  "builds": [
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/rsvp",
-      "dest": "/public/rsvp.html"
-    },
-    {
-      "src": "/admin",
-      "dest": "/public/admin/dashboard.html"
-    },
-    {
-      "src": "/admin/dashboard",
-      "dest": "/public/admin/dashboard.html"
-    },
-    {
-      "src": "/admin/designer",
-      "dest": "/public/admin/designer.html"
-    },
-    {
-      "src": "/confirmation",
-      "dest": "/public/confirmation.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
-    }
+  "public": true,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/rsvp", "destination": "/rsvp.html" },
+    { "source": "/admin", "destination": "/admin/dashboard.html" },
+    { "source": "/admin/dashboard", "destination": "/admin/dashboard.html" },
+    { "source": "/admin/designer", "destination": "/admin/designer.html" },
+    { "source": "/confirmation", "destination": "/confirmation.html" }
   ]
 }
