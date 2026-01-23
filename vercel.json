@@ -1,28 +1,39 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "name": "weddinvite",
-  "outputDirectory": "public",
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": null,
+  "builds": [
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
     {
       "src": "/rsvp",
-      "dest": "/rsvp.html"
+      "dest": "/public/rsvp.html"
     },
     {
       "src": "/admin",
-      "dest": "/admin/dashboard.html"
+      "dest": "/public/admin/dashboard.html"
     },
     {
       "src": "/admin/dashboard",
-      "dest": "/admin/dashboard.html"
+      "dest": "/public/admin/dashboard.html"
     },
     {
       "src": "/admin/designer",
-      "dest": "/admin/designer.html"
+      "dest": "/public/admin/designer.html"
     },
     {
       "src": "/confirmation",
-      "dest": "/confirmation.html"
+      "dest": "/public/confirmation.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
     }
   ],
   "headers": [
