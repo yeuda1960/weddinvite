@@ -1,0 +1,39 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "name": "weddinvite",
+  "outputDirectory": "public",
+  "routes": [
+    {
+      "src": "/rsvp",
+      "dest": "/rsvp.html"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin/dashboard.html"
+    },
+    {
+      "src": "/admin/dashboard",
+      "dest": "/admin/dashboard.html"
+    },
+    {
+      "src": "/admin/designer",
+      "dest": "/admin/designer.html"
+    },
+    {
+      "src": "/confirmation",
+      "dest": "/confirmation.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
+}

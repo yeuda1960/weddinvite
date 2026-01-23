@@ -340,6 +340,98 @@ wedding-invitation-system/
 └── firestore.rules              # Firestore security rules
 ```
 
+## Deployment (Vercel)
+
+### What Vercel Hosts
+
+Vercel hosts the **static frontend only** from the `/public` folder:
+- RSVP page (`rsvp.html`)
+- Admin dashboard (`admin/dashboard.html`, `admin/designer.html`)
+- Confirmation page (`confirmation.html`)
+- All CSS, JS, and media assets
+
+**URLs:**
+- Production: https://weddinvite-phi.vercel.app
+- RSVP: https://weddinvite-phi.vercel.app/rsvp
+
+### What Vercel Does NOT Host
+
+The Node.js backend (`src/server.js`) with WhatsApp automation **cannot run on Vercel** because:
+- WhatsApp requires a persistent browser session
+- The server needs to run continuously for message queuing
+- Serverless functions have execution time limits
+
+**For the backend**, run locally or use a dedicated server:
+```bash
+npm start  # Runs src/server.js on localhost:3000
+```
+
+### Automatic Deployments from GitHub
+
+Vercel is connected to GitHub and automatically deploys when you push to `main`:
+
+1. Push changes to GitHub `main` branch
+2. Vercel detects the push
+3. Vercel builds and deploys the `/public` folder
+4. Site is live within ~30 seconds
+
+**To verify the connection:**
+1. Go to https://vercel.com/yeudas-projects/weddinvite/settings/git
+2. Ensure "Connected Git Repository" shows your GitHub repo
+3. Ensure "Production Branch" is `main`
+
+### Ship Workflow (Push to Production)
+
+Use the ship script to safely commit and push:
+
+```powershell
+# Option 1: With message
+.\scripts\ship.ps1 "fix: update rsvp styling"
+
+# Option 2: Interactive (will prompt for message)
+.\scripts\ship.ps1
+```
+
+Or use npm:
+```bash
+npm run ship
+```
+
+The script will:
+1. Show current branch and warn if not on `main`
+2. Display all pending changes
+3. Ask for confirmation before committing
+4. Push to GitHub (triggering Vercel deploy)
+
+### Environment Variables (Vercel)
+
+The static site uses Firebase client SDK (configured in JS files), so **no server-side env vars are needed on Vercel**.
+
+If you add API routes in the future:
+1. Go to https://vercel.com/yeudas-projects/weddinvite/settings/environment-variables
+2. Add variables as needed
+
+### Troubleshooting Vercel 500 Errors
+
+If you see "This Serverless Function has crashed":
+
+1. **Check if `vercel.json` exists** - It must be present to tell Vercel this is a static site
+2. **Check Vercel logs**: https://vercel.com/yeudas-projects/weddinvite → Deployments → Click latest → "Runtime Logs"
+3. **Common causes:**
+   - Missing `vercel.json` (Vercel tries to auto-detect and run Node)
+   - Incorrect `outputDirectory` in `vercel.json`
+   - File not found (check routes in `vercel.json`)
+
+4. **Quick fix:**
+   ```bash
+   # Ensure vercel.json exists and redeploy
+   git add vercel.json
+   git commit -m "fix: add vercel.json for static deployment"
+   git push origin main
+   ```
+
+---
+
 ## Troubleshooting
 
 ### WhatsApp Issues

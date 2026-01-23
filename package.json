@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "description": "Wedding invitation system with WhatsApp automation and RSVP management",
   "main": "src/scripts/sendInvitations.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "send-invitations": "node src/scripts/sendInvitations.js",
     "test-whatsapp": "node src/scripts/testWhatsApp.js",
     "test-sheets": "node src/scripts/testGoogleSheets.js",
     "test-firebase": "node src/scripts/testFirebase.js",
     "start": "node src/server.js",
-    "deploy": "firebase deploy"
+    "deploy": "firebase deploy",
+    "deploy:vercel": "vercel --prod",
+    "ship": "powershell -ExecutionPolicy Bypass -File scripts/ship.ps1"
   },
   "keywords": [
     "wedding",
