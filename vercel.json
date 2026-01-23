@@ -1,6 +1,8 @@
 {
   "version": 2,
-  "public": true,
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": "public",
   "cleanUrls": true,
   "rewrites": [
     { "source": "/rsvp", "destination": "/rsvp.html" },
