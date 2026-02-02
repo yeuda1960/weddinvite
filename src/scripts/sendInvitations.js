@@ -28,12 +28,15 @@ async function main() {
         await whatsappService.initialize();
         console.log('✅ WhatsApp ready\n');
 
-        // Step 4: Send invitations
-        const rsvpUrl = process.env.RSVP_URL || 'https://wedinvite-ee26d.web.app/rsvp.html';
+        // Step 4: Generate Premium Links and Send invitations
+        let baseUrl = process.env.RSVP_URL || 'http://localhost:3000';
+        if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+        if (baseUrl.endsWith('rsvp.html')) baseUrl = baseUrl.replace('/rsvp.html', '');
+
         const imagePath = process.env.INVITATION_IMAGE_PATH || path.join(__dirname, '../../assets/invitation.jpg');
 
         console.log('📤 Starting to send invitations...\n');
-        console.log(`RSVP URL: ${rsvpUrl}`);
+        console.log(`Base URL: ${baseUrl}`);
         console.log(`Image: ${imagePath}\n`);
 
         let sentCount = 0;
@@ -43,10 +46,15 @@ async function main() {
             const guest = guests[i];
             console.log(`[${i + 1}/${guests.length}] Sending to ${guest.name}...`);
 
+            // Generate Premium Deep Link
+            const cleanPhone = guest.phone.replace(/\D/g, '');
+            const safeName = encodeURIComponent(guest.name || '');
+            const deepLink = `${baseUrl}/premium-rsvp/index.html#/invite/premium?phone=${cleanPhone}&name=${safeName}`;
+
             const result = await whatsappService.sendInvitation(
                 guest.phone,
                 guest.name,
-                rsvpUrl,
+                deepLink,
                 imagePath
             );
 

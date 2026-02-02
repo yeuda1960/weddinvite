@@ -405,28 +405,38 @@ function prefillForm(data) {
     }
 }
 
-// Show/hide conditional questions based on attendance
-attendingRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-        clearError();
-        if (e.target.value === 'yes') {
-            attendingQuestions.style.display = 'block';
-        } else {
-            attendingQuestions.style.display = 'none';
-        }
+// Show/hide conditional questions based on attendance (legacy - kept for compatibility)
+// Note: Stepped form handles this differently via rsvp-stepper.js
+if (attendingRadios.length > 0) {
+    attendingRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            clearError();
+            if (e.target.value === 'yes') {
+                if (attendingQuestions) attendingQuestions.style.display = 'block';
+            } else {
+                if (attendingQuestions) attendingQuestions.style.display = 'none';
+            }
+        });
     });
-});
+}
 
 // Clear error on input
 guestNameInput.addEventListener('input', clearError);
 guestPhoneInput.addEventListener('input', clearError);
 
-// Validate form
+// Validate form (works with both stepped and legacy forms)
 function validateForm() {
     const name = guestNameInput.value.trim();
     const phoneRaw = guestPhoneInput.value.trim();
     const phone = normalizePhone(phoneRaw);
+
+    // Check attendance (try radio OR hidden input)
+    let attendingValue = null;
     const checkedRadio = document.querySelector('input[name="attending"]:checked');
+    const hiddenInput = document.getElementById('attendingInput');
+
+    if (checkedRadio) attendingValue = checkedRadio.value;
+    else if (hiddenInput) attendingValue = hiddenInput.value;
 
     // Check phone
     if (!phoneRaw) {
@@ -448,16 +458,18 @@ function validateForm() {
     }
 
     // Check attendance selection
-    if (!checkedRadio) {
+    if (!attendingValue) {
         return { valid: false, message: 'אנא בחר/י האם תוכל/י להגיע.' };
     }
 
-    // If attending, validate additional fields
-    if (checkedRadio.value === 'yes') {
-        const numberOfGuests = parseInt(document.getElementById('numberOfGuests').value);
-
-        if (isNaN(numberOfGuests) || numberOfGuests < 1) {
-            return { valid: false, message: 'אנא הזן/י מספר אורחים תקין (לפחות 1).' };
+    // If attending (yes), validate additional fields
+    if (attendingValue === 'yes') {
+        const numberOfGuestsInput = document.getElementById('numberOfGuests');
+        if (numberOfGuestsInput) {
+            const numberOfGuests = parseInt(numberOfGuestsInput.value);
+            if (isNaN(numberOfGuests) || numberOfGuests < 1) {
+                return { valid: false, message: 'אנא הזן/י מספר אורחים תקין (לפחות 1).' };
+            }
         }
     }
 
@@ -484,8 +496,27 @@ form.addEventListener('submit', async (e) => {
     try {
         const phone = validation.phone; // Already normalized
         const rsvpName = guestNameInput.value.trim();
+        // Check attendance (try radio OR hidden input)
+        let attendingValue = null;
         const checkedRadio = document.querySelector('input[name="attending"]:checked');
-        const attending = checkedRadio.value === 'yes';
+        const hiddenInput = document.getElementById('attendingInput');
+        if (checkedRadio) attendingValue = checkedRadio.value;
+        else if (hiddenInput) attendingValue = hiddenInput.value;
+
+        // Handle stepped form: yes/no/undecided
+        let attending = null; // null for undecided
+        let rsvpStatus = null;
+
+        if (attendingValue) {
+            if (attendingValue === 'yes') {
+                attending = true;
+            } else if (attendingValue === 'no') {
+                attending = false;
+            } else if (attendingValue === 'undecided') {
+                attending = null; // null = undecided
+                rsvpStatus = 'undecided';
+            }
+        }
 
         // Check if guest already exists to determine if this is new or update
         let isNewGuest = true;
@@ -503,25 +534,37 @@ form.addEventListener('submit', async (e) => {
             rsvpName: rsvpName,          // Name entered in RSVP form (always save)
             name: rsvpName,              // Current display name
             phone: phone,
-            attending: attending,
-            rsvpSubmitted: true,
+            attending: attending,        // true/false/null (null = undecided)
+            rsvpSubmitted: true,         // Always true when form is submitted
             rsvpSubmittedAt: firebase.firestore.FieldValue.serverTimestamp(),
         };
+
+        // Add rsvpStatus for undecided (backward compatible - existing reads won't break)
+        if (rsvpStatus) {
+            formData.rsvpStatus = rsvpStatus;
+        }
 
         // Only set originalName for NEW guests
         if (isNewGuest) {
             formData.originalName = rsvpName;
         }
 
-        // Add conditional fields if attending
-        if (attending) {
-            formData.numberOfGuests = parseInt(document.getElementById('numberOfGuests').value) || 1;
-            formData.hasChildren = document.getElementById('hasChildren').checked;
-            formData.notes = document.getElementById('notes').value.trim();
-        } else {
+        // Add conditional fields based on attendance path
+        if (attending === true) {
+            // YES path
+            formData.numberOfGuests = parseInt(document.getElementById('numberOfGuests')?.value) || 1;
+            formData.hasChildren = document.getElementById('hasChildren')?.checked || false;
+            formData.notes = document.getElementById('notes')?.value.trim() || '';
+        } else if (attending === false) {
+            // NO path
             formData.numberOfGuests = 0;
             formData.hasChildren = false;
-            formData.notes = '';
+            formData.notes = document.getElementById('notesNo')?.value.trim() || '';
+        } else {
+            // UNDECIDED path
+            formData.numberOfGuests = 0;
+            formData.hasChildren = false;
+            formData.notes = document.getElementById('notesUndecided')?.value.trim() || '';
         }
 
         console.log('Submitting RSVP:', formData);

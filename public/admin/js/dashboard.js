@@ -57,7 +57,7 @@ const statRsvpWithoutMessage = document.getElementById('statRsvpWithoutMessage')
 window.addEventListener('DOMContentLoaded', () => {
     setupRealtimeListener();
     checkWhatsAppStatus();
-    setInterval(checkWhatsAppStatus, 5000); // Check every 5 seconds
+    setInterval(checkWhatsAppStatus, 2500); // Check every 2.5 seconds
     initMessageEditor(); // Initialize message editor
 });
 

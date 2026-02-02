@@ -2,8 +2,12 @@
 <html lang="he" dir="rtl">
 
 <head>
+    <!-- BUILD_ID: 20260123-1200 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>אישור הגעה - RSVP</title>
     <meta name="description" content="אנא אשר/י את הגעתך לחתונה">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,8 +15,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Assistant:wght@300;400;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/rsvp-premium.css">
+    <link rel="stylesheet" href="css/style.css?v=20260123-1200">
+    <link rel="stylesheet" href="css/rsvp-premium.css?v=20260123-1200">
     <link
         href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Rubik:wght@300;400;500;700&display=swap"
         rel="stylesheet">
@@ -75,11 +79,11 @@
     <!-- Main Content - VISIBLE BY DEFAULT (intro overlay will cover if needed) -->
     <div id="mainContent" class="rsvp-page">
 
-        <!-- Top Lottie Decoration -->
-        <div id="topLottieContainer" class="lottie-decoration lottie-top"></div>
-
-        <!-- Hero Section -->
+        <!-- A) INVITATION CONTENT (Hero Section with Lottie) -->
         <header class="rsvp-hero">
+            <!-- Top Lottie Hero Decoration -->
+            <div id="topLottieContainer" class="lottie-decoration lottie-top"></div>
+            
             <div class="hero-content">
                 <p id="welcomeTextDisplay" class="hero-subtitle">ברוכים הבאים</p>
                 <h1 id="namesTitleDisplay" class="hero-title">Names</h1>
@@ -90,9 +94,6 @@
                 </div>
             </div>
         </header>
-
-        <!-- Flowers Lottie Decoration (Optional) -->
-        <div id="flowersLottieContainer" class="lottie-decoration lottie-flowers"></div>
 
         <div class="container">
             <!-- Event Details Card -->
@@ -118,79 +119,133 @@
                 </div>
             </div>
 
-            <!-- RSVP Form (Original Logic Preserved) -->
+            <!-- RSVP Form (Stepped Flow) -->
             <div class="rsvp-card section-reveal">
                 <div class="card-header">
                     <h2>אישור הגעה 💌</h2>
                     <p class="subtitle">נשמח לדעת אם תוכל/י להגיע</p>
                 </div>
 
-                <form id="rsvpForm" class="rsvp-form">
-                    <!-- Guest Name (editable) -->
-                    <div class="form-group">
-                        <label for="guestName">שם מלא *</label>
-                        <input type="text" id="guestName" name="guestName" required placeholder="הכנס/י את שמך המלא">
-                    </div>
-
-                    <!-- Phone Number (visible and editable) -->
-                    <div class="form-group">
-                        <label for="guestPhone">מספר טלפון *</label>
-                        <div class="phone-input-group">
-                            <span class="phone-prefix">+972</span>
-                            <input type="tel" id="guestPhone" name="guestPhone" required placeholder="50-123-4567"
-                                pattern="[0-9\-]+" inputmode="tel">
-                        </div>
-                        <small class="help-text">הזן/י את מספר הטלפון ללא קידומת המדינה</small>
-                    </div>
-
-                    <!-- Attendance Question -->
-                    <div class="form-group">
-                        <label class="main-question">האם תוכל/י להגיע? *</label>
-                        <div class="radio-group">
-                            <label class="radio-option">
-                                <input type="radio" name="attending" value="yes" required>
-                                <span class="radio-custom"></span>
-                                <span class="radio-label">כן, אגיע בשמחה! 🎉</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="attending" value="no" required>
-                                <span class="radio-custom"></span>
-                                <span class="radio-label">לצערי, לא אוכל להגיע 😔</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Conditional Questions (shown only if attending) -->
-                    <div id="attendingQuestions" class="conditional-section" style="display: none;">
-                        <!-- Number of Guests -->
+                <form id="rsvpForm" class="rsvp-form rsvp-stepped">
+                    <!-- Step 0: Name & Phone -->
+                    <div class="rsvp-step" data-step="0">
                         <div class="form-group">
-                            <label for="numberOfGuests">כמה אורחים יגיעו? (כולל אותך)</label>
-                            <input type="number" id="numberOfGuests" name="numberOfGuests" value="1"
-                                inputmode="numeric">
+                            <label for="guestName">שם מלא *</label>
+                            <input type="text" id="guestName" name="guestName" required placeholder="הכנס/י את שמך המלא">
                         </div>
 
-                        <!-- Children -->
                         <div class="form-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="hasChildren" name="hasChildren">
-                                <span class="checkbox-custom"></span>
-                                <span>יגיעו ילדים 👶</span>
-                            </label>
+                            <label for="guestPhone">מספר טלפון *</label>
+                            <div class="phone-input-group">
+                                <span class="phone-prefix">+972</span>
+                                <input type="tel" id="guestPhone" name="guestPhone" required placeholder="50-123-4567"
+                                    pattern="[0-9\-]+" inputmode="tel">
+                            </div>
+                            <small class="help-text">הזן/י את מספר הטלפון ללא קידומת המדינה</small>
                         </div>
 
-                        <!-- Additional Notes -->
+                        <button type="button" class="step-button" onclick="rsvpStepper.next()">המשך</button>
+                    </div>
+
+                    <!-- Step 1: Attendance & Details Combined (In-Card Stepper) -->
+                    <div class="rsvp-step" data-step="1" style="display: none;">
                         <div class="form-group">
-                            <label for="notes">הערות נוספות (אופציונלי)</label>
-                            <textarea id="notes" name="notes" rows="3"
-                                placeholder="רגישויות מזון, בקשות מיוחדות..."></textarea>
+                            <label class="main-question">האם תוכל/י להגיע? *</label>
+                            
+                            <!-- Options Container -->
+                            <div class="stepped-options-container">
+                                
+                                <!-- OPTION 1: YES -->
+                                <div class="option-card" data-value="yes">
+                                    <div class="option-header" onclick="rsvpStepper.selectOption('yes')">
+                                        <div class="radio-indicator"></div>
+                                        <span class="option-label">כן, אגיע בשמחה! 🎉</span>
+                                    </div>
+                                    <!-- Nested Step Content: Coming Details -->
+                                    <div class="option-content" id="content-yes" style="display: none;">
+                                        <div class="separator-line"></div>
+                                        <label for="numberOfGuests">כמה אורחים יגיעו? (כולל אותך)</label>
+                                        <div class="guest-counter">
+                                            <button type="button" class="counter-btn" onclick="rsvpStepper.decrementGuests()">−</button>
+                                            <input type="number" id="numberOfGuests" name="numberOfGuests" value="1" min="1" readonly>
+                                            <button type="button" class="counter-btn" onclick="rsvpStepper.incrementGuests()">+</button>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="hasChildren" name="hasChildren">
+                                                <span class="checkbox-custom"></span>
+                                                <span>יגיעו ילדים 👶</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="notes">הערות נוספות (אופציונלי)</label>
+                                            <textarea id="notes" name="notes" rows="2" placeholder="רגישויות מזון, בקשות מיוחדות..."></textarea>
+                                        </div>
+                                        
+                                        <button type="button" class="step-button" onclick="rsvpStepper.submitFromCard('yes')">שלח אישור הגעה</button>
+                                    </div>
+                                </div>
+
+                                <!-- OPTION 2: NO -->
+                                <div class="option-card" data-value="no">
+                                    <div class="option-header" onclick="rsvpStepper.selectOption('no')">
+                                        <div class="radio-indicator"></div>
+                                        <span class="option-label">לצערי, לא אוכל להגיע 😔</span>
+                                    </div>
+                                    <!-- Nested Step Content: Not Coming Message -->
+                                    <div class="option-content" id="content-no" style="display: none;">
+                                        <div class="separator-line"></div>
+                                        <div class="form-group">
+                                            <label for="notesNo">הודעה (אופציונלי)</label>
+                                            <textarea id="notesNo" name="notesNo" rows="2" placeholder="רוצה למסור משהו לזוג?"></textarea>
+                                        </div>
+                                        <button type="button" class="step-button" onclick="rsvpStepper.submitFromCard('no')">שלח עדכון</button>
+                                    </div>
+                                </div>
+
+                                <!-- OPTION 3: UNSURE -->
+                                <div class="option-card" data-value="undecided">
+                                    <div class="option-header" onclick="rsvpStepper.selectOption('undecided')">
+                                        <div class="radio-indicator"></div>
+                                        <span class="option-label">אני עדיין לא בטוח/ה 🫣</span>
+                                    </div>
+                                    <!-- Nested Step Content: Undecided Note -->
+                                    <div class="option-content" id="content-undecided" style="display: none;">
+                                        <div class="separator-line"></div>
+                                        <div class="form-group">
+                                            <label for="notesUndecided">מתי תדע/י?</label>
+                                            <textarea id="notesUndecided" name="notesUndecided" rows="2" placeholder="אנא עדכנ/י אותנו כשתדע/י..."></textarea>
+                                        </div>
+                                        <button type="button" class="step-button" onclick="rsvpStepper.submitFromCard('undecided')">עדכן בהמשך</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Back Button (Global for step 1) -->
+                        <div class="step-actions centered">
+                            <button type="button" class="text-button" onclick="rsvpStepper.prev()">נכנסתי עם מספר לא נכון? חזרה</button>
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
-                    <button type="submit" class="submit-button" id="submitBtn">
-                        <span id="btnText">שלח אישור</span>
-                        <span id="btnLoader" class="loader" style="display: none;"></span>
-                    </button>
+                    <!-- Step Final: Review & Submit -->
+                    <div class="rsvp-step" data-step="review" style="display: none;">
+                        <div class="review-summary">
+                            <h3>סיכום</h3>
+                            <div id="reviewContent"></div>
+                        </div>
+
+                        <div class="step-actions">
+                            <button type="button" class="step-button step-back" onclick="rsvpStepper.prev()">חזור</button>
+                            <button type="submit" class="submit-button" id="submitBtn">
+                                <span id="btnText">שלח אישור</span>
+                                <span id="btnLoader" class="loader" style="display: none;"></span>
+                            </button>
+                        </div>
+                    </div>
 
                     <!-- Error Message -->
                     <div id="errorMessage" class="error-message" style="display: none;"></div>
@@ -208,11 +263,17 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
+    <!-- RSVP Stepper (Stepped Form Flow) -->
+    <script src="js/rsvp-stepper.js?v=20260123-1200"></script>
+    
     <!-- RSVP Logic (Original - Backend Integration) -->
-    <script src="js/rsvp.js"></script>
+    <script src="js/rsvp.js?v=20260123-1200"></script>
     
     <!-- Premium Effects (Video, Lottie, Audio, Smooth Scroll) -->
-    <script src="js/rsvp-premium-effects.js"></script>
+    <script src="js/rsvp-premium-effects.js?v=20260123-1200"></script>
+    
+    <!-- Animations -->
+    <script src="js/animations.js?v=20260123-1200"></script>
 </body>
 
 </html>

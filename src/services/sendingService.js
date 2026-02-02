@@ -1,15 +1,6 @@
 /**
- * WhatsApp Invitation Sending Service
- * 
- * Features:
- * - Queue management for batch sending
- * - Retry logic (3 attempts with exponential backoff)
- * - Rate limiting (configurable delay between messages)
- * - Firestore status tracking
- * - Real-time progress updates
- * - Pause/Resume/Stop functionality
+ * WhatsApp Invitation Sending Service (Premium Edition)
  */
-
 const WhatsAppService = require('./whatsappService');
 const admin = require('firebase-admin');
 
@@ -20,325 +11,190 @@ class SendingService {
         this.isRunning = false;
         this.isPaused = false;
         this.shouldStop = false;
-        this.currentProgress = {
-            total: 0,
-            sent: 0,
-            failed: 0,
-            pending: 0
-        };
+        this.currentProgress = { total: 0, sent: 0, failed: 0, pending: 0 };
 
-        // Configuration
+        // Config
         this.config = {
             retryAttempts: 3,
-            retryDelayMs: 5000,        // Initial retry delay
-            messagDelayMs: 7000,        // Delay between messages (7 seconds)
-            maxMessageDelayMs: 15000,   // Max random delay
-            batchSize: 50               // Process in batches
+            retryDelayMs: 1000,
+            messagDelayMs: 5000, // 5 seconds between messages
+            maxMessageDelayMs: 10000,
+            batchSize: 50
         };
+        this.isConnected = false;
     }
 
-    /**
-     * Initialize WhatsApp connection
-     */
     async initialize() {
-        if (this.whatsapp) {
-            return { success: true, message: 'Already initialized' };
-        }
-
+        if (this.whatsapp) return { success: true, message: 'Already initialized' };
         this.whatsapp = new WhatsAppService();
-
         try {
             await this.whatsapp.initialize();
+            this.isConnected = true;
             console.log('✅ Sending service initialized');
             return { success: true, message: 'WhatsApp connected' };
         } catch (error) {
-            console.error('❌ Failed to initialize WhatsApp:', error);
+            console.error('❌ Failed to initialize:', error);
+            this.isConnected = false;
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * Get WhatsApp connection status
-     */
     getStatus() {
+        console.log('🔍 Frontend polling status. Connected:', this.isConnected);
         return {
-            isConnected: this.whatsapp?.isReady || false,
+            isConnected: this.isConnected,
             isRunning: this.isRunning,
             isPaused: this.isPaused,
             progress: this.currentProgress
         };
     }
 
-    /**
-     * Get custom message from Firestore settings
-     */
+    // --- CRITICAL: CENTRALIZED LINK GENERATION ---
+    _generateDeepLink(phone, name) {
+        // 1. Determine Base Domain (Localhost or Production)
+        // If RSVP_URL is set in .env (e.g. https://myapp.com), use it. Otherwise localhost.
+        let base = process.env.RSVP_URL || 'http://localhost:3000';
+
+        // Remove trailing slash if present to avoid double slash
+        if (base.endsWith('/')) base = base.slice(0, -1);
+
+        // Remove 'rsvp.html' if it was accidentally left in the .env variable
+        if (base.endsWith('rsvp.html')) base = base.replace('/rsvp.html', '');
+
+        // 2. Clean Data
+        const cleanPhone = phone.replace(/\D/g, '');
+        const safeName = encodeURIComponent(name || '');
+
+        // 3. Construct THE NEW PREMIUM LINK
+        // Structure: Domain + /premium-rsvp/index.html + #/invite/premium + params
+        return `${base}/premium-rsvp/index.html#/invite/premium?phone=${cleanPhone}&name=${safeName}`;
+    }
+
     async getCustomMessage() {
         try {
             const doc = await this.db.collection('settings').doc('customMessage').get();
-            if (doc.exists && doc.data().message) {
-                return doc.data().message;
-            }
-        } catch (error) {
-            console.error('Error fetching custom message:', error);
-        }
+            if (doc.exists && doc.data().message) return doc.data().message;
+        } catch (e) { console.error('Error fetching message:', e); }
         return null;
     }
 
-    /**
-     * Send invitations to all pending guests
-     */
-    async sendToAllGuests(rsvpUrl, imagePath) {
-        if (this.isRunning) {
-            return { success: false, error: 'Sending already in progress' };
-        }
-
-        if (!this.whatsapp?.isReady) {
-            return { success: false, error: 'WhatsApp not connected' };
-        }
+    // --- BATCH SENDING ---
+    async sendToAllGuests(rsvpUrlIgnored, imagePath) {
+        if (this.isRunning) return { success: false, error: 'Already running' };
+        if (!this.isConnected) return { success: false, error: 'WhatsApp not connected' };
 
         this.isRunning = true;
         this.shouldStop = false;
         this.isPaused = false;
 
         try {
-            // Get custom message from settings
             const customMessage = await this.getCustomMessage();
-            if (customMessage) {
-                console.log('📝 Using custom message template');
-            }
-
-            // Get ALL guests and filter for those who need messages
             const allSnapshot = await this.db.collection('guests').get();
 
-            console.log(`📋 Found ${allSnapshot.size} total guests in database`);
-
-            // Filter guests who haven't received the message yet
             const guests = allSnapshot.docs
-                .map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }))
-                .filter(guest => {
-                    // Include if: no status, pending, or failed
-                    const status = guest.messageStatus;
-                    return !status || status === 'pending' || status === 'failed';
-                });
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(g => !g.messageStatus || g.messageStatus === 'pending' || g.messageStatus === 'failed');
 
-            console.log(`📤 Guests to send: ${guests.length}`);
+            console.log(`📤 Starting send to ${guests.length} guests...`);
 
             if (guests.length === 0) {
                 this.isRunning = false;
-                return { success: true, message: 'No pending guests to send' };
+                return { success: true, message: 'No pending guests' };
             }
 
-            this.currentProgress = {
-                total: guests.length,
-                sent: 0,
-                failed: 0,
-                pending: guests.length
-            };
+            this.currentProgress = { total: guests.length, sent: 0, failed: 0, pending: guests.length };
 
-            console.log(`📤 Starting to send to ${guests.length} guests...`);
-
-            // Process each guest
             for (const guest of guests) {
-                // Check if we should stop
-                if (this.shouldStop) {
-                    console.log('⏹️ Sending stopped by user');
-                    break;
-                }
-
-                // Wait while paused
-                while (this.isPaused && !this.shouldStop) {
-                    await this.delay(1000);
-                }
-
                 if (this.shouldStop) break;
+                while (this.isPaused && !this.shouldStop) await this.delay(1000);
 
-                // Send to this guest with retries (pass custom message)
-                const result = await this.sendWithRetry(guest, rsvpUrl, imagePath, customMessage);
+                // USE THE CENTRALIZED LINK GENERATOR
+                const deepLink = this._generateDeepLink(guest.phone, guest.originalName || guest.name);
 
-                // Update progress
-                if (result.success) {
-                    this.currentProgress.sent++;
-                } else {
-                    this.currentProgress.failed++;
-                }
+                const result = await this.sendWithRetry(guest, deepLink, imagePath, customMessage);
+
+                if (result.success) this.currentProgress.sent++;
+                else this.currentProgress.failed++;
                 this.currentProgress.pending--;
 
-                // Random delay between messages (7-15 seconds)
-                const delay = this.config.messagDelayMs +
-                    Math.random() * (this.config.maxMessageDelayMs - this.config.messagDelayMs);
+                const delay = this.config.messagDelayMs + Math.random() * 5000;
                 await this.delay(delay);
             }
 
             this.isRunning = false;
-            console.log('✅ Sending complete:', this.currentProgress);
-
-            return {
-                success: true,
-                ...this.currentProgress
-            };
+            return { success: true, ...this.currentProgress };
 
         } catch (error) {
-            console.error('❌ Sending error:', error);
             this.isRunning = false;
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * Send message to a single guest with retry logic
-     * @param {Object} guest - Guest data object
-     * @param {string} rsvpUrl - RSVP page URL
-     * @param {string} imagePath - Path to invitation image
-     * @param {string} customMessage - Custom message template (optional)
-     */
-    async sendWithRetry(guest, rsvpUrl, imagePath, customMessage = null) {
-        let lastError = null;
-
+    async sendWithRetry(guest, deepLink, imagePath, customMessage) {
         for (let attempt = 1; attempt <= this.config.retryAttempts; attempt++) {
             try {
-                // Update status to "sending"
                 await this.updateGuestStatus(guest.id, 'sending', attempt);
 
-                // Send the message
-                const personalizedUrl = `${rsvpUrl}?phone=${guest.phone}`;
+                // DELEGATE TO WHATSAPP SERVICE
                 const result = await this.whatsapp.sendInvitation(
                     guest.phone,
                     guest.originalName || guest.name,
-                    personalizedUrl,
+                    deepLink, // Passing the correct link
                     imagePath,
                     customMessage
                 );
 
                 if (result.success) {
-                    // Success! Update status
                     await this.updateGuestStatus(guest.id, 'sent', attempt);
-                    console.log(`✅ [${this.currentProgress.sent + 1}/${this.currentProgress.total}] Sent to ${guest.originalName || guest.name}`);
                     return { success: true };
                 } else {
-                    throw new Error(result.error || 'Send failed');
+                    throw new Error(result.error);
                 }
-
             } catch (error) {
-                lastError = error;
-                console.log(`⚠️ Attempt ${attempt}/${this.config.retryAttempts} failed for ${guest.originalName || guest.name}: ${error.message}`);
-
-                if (attempt < this.config.retryAttempts) {
-                    // Exponential backoff
-                    const backoffDelay = this.config.retryDelayMs * Math.pow(2, attempt - 1);
-                    console.log(`⏳ Waiting ${backoffDelay / 1000}s before retry...`);
-                    await this.delay(backoffDelay);
+                console.log(`⚠️ Attempt ${attempt} failed: ${error.message}`);
+                if (attempt < this.config.retryAttempts) await this.delay(1000);
+                else {
+                    await this.updateGuestStatus(guest.id, 'failed', attempt, error.message);
+                    return { success: false, error: error.message };
                 }
             }
         }
-
-        // All retries failed
-        await this.updateGuestStatus(guest.id, 'failed', this.config.retryAttempts, lastError?.message);
-        console.log(`❌ Failed to send to ${guest.originalName || guest.name} after ${this.config.retryAttempts} attempts`);
-        return { success: false, error: lastError?.message };
     }
 
-    /**
-     * Update guest status in Firestore
-     */
-    async updateGuestStatus(guestId, status, attempt = 1, errorMessage = null) {
-        const updateData = {
-            messageStatus: status,
-            lastAttempt: new Date(),
-            attemptCount: attempt
-        };
-
-        if (status === 'sent') {
-            updateData.sentAt = new Date();
-        }
-
-        if (errorMessage) {
-            updateData.lastError = errorMessage;
-        }
-
-        await this.db.collection('guests').doc(guestId).update(updateData);
-    }
-
-    /**
-     * Send to a single phone number (for testing)
-     */
-    async sendTestMessage(phone, name, rsvpUrl, imagePath) {
-        if (!this.whatsapp?.isReady) {
-            return { success: false, error: 'WhatsApp not connected' };
-        }
+    // --- TEST SENDING (Fixed to use new link) ---
+    async sendTestMessage(phone, name, rsvpUrlIgnored, imagePath) {
+        if (!this.isConnected) return { success: false, error: 'Not connected' };
 
         try {
-            const personalizedUrl = `${rsvpUrl}?phone=${phone}`;
-            const result = await this.whatsapp.sendInvitation(phone, name, personalizedUrl, imagePath);
-            return result;
+            // USE THE CENTRALIZED LINK GENERATOR
+            const deepLink = this._generateDeepLink(phone, name);
+            const customMessage = await this.getCustomMessage();
+
+            console.log(`🧪 Sending TEST to ${phone} with link: ${deepLink}`);
+
+            return await this.whatsapp.sendInvitation(phone, name, deepLink, imagePath, customMessage);
         } catch (error) {
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * Pause sending
-     */
-    pause() {
-        if (this.isRunning) {
-            this.isPaused = true;
-            console.log('⏸️ Sending paused');
-            return { success: true };
-        }
-        return { success: false, error: 'Not currently sending' };
+    async updateGuestStatus(guestId, status, attempt, error = null) {
+        const data = { messageStatus: status, lastAttempt: new Date(), attemptCount: attempt };
+        if (status === 'sent') data.sentAt = new Date();
+        if (error) data.lastError = error;
+        await this.db.collection('guests').doc(guestId).update(data);
     }
 
-    /**
-     * Resume sending
-     */
-    resume() {
-        if (this.isPaused) {
-            this.isPaused = false;
-            console.log('▶️ Sending resumed');
-            return { success: true };
-        }
-        return { success: false, error: 'Not paused' };
-    }
-
-    /**
-     * Stop sending
-     */
-    stop() {
-        this.shouldStop = true;
-        this.isPaused = false;
-        console.log('⏹️ Stop requested');
-        return { success: true };
-    }
-
-    /**
-     * Destroy WhatsApp connection
-     */
-    async destroy() {
-        this.stop();
-        if (this.whatsapp) {
-            await this.whatsapp.destroy();
-            this.whatsapp = null;
-        }
-    }
-
-    /**
-     * Helper: delay
-     */
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+    pause() { this.isPaused = true; return { success: true }; }
+    resume() { this.isPaused = false; return { success: true }; }
+    stop() { this.shouldStop = true; return { success: true }; }
+    delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 }
 
-// Singleton instance
-let sendingServiceInstance = null;
-
+let instance = null;
 function getSendingService() {
-    if (!sendingServiceInstance) {
-        sendingServiceInstance = new SendingService();
-    }
-    return sendingServiceInstance;
+    if (!instance) instance = new SendingService();
+    return instance;
 }
 
 module.exports = { SendingService, getSendingService };
