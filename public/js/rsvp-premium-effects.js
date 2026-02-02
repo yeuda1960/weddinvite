@@ -10,28 +10,29 @@
  * - /media/audio/All_You_Need_Is_Love-104256-mobiles24.mp3
  */
 
-(function() {
+(function () {
     'use strict';
 
     // ============================================
     // CONFIGURATION
     // ============================================
     const ASSETS = {
-        introVideo: '/media/intro/envelope.mp4',
-        topLottie: '/media/lottie/event-side-decoration.json',
-        flowersLottie: '/media/lottie/flowers.json', // Optional
-        bgAudio: '/media/audio/All_You_Need_Is_Love-104256-mobiles24.mp3'
+        introVideo: '/premium/media/envelope.mp4',
+        topLottie: '/premium/lottie/hero.json',
+        flowersLottie: '/premium/decor/flowers.svg', // Optional - SVG decoration
+        bgAudio: '/premium/media/bg-music.mp3'
     };
 
     const STORAGE_KEYS = {
-        introShown: 'rsvp_intro_shown',
-        audioEnabled: 'rsvp_audio_enabled'
+        // REMOVED: introShown - intro must show every visit
+        audioEnabled: 'rsvp_audio_enabled',
+        audioMuted: 'rsvp_audio_muted' // Only store mute state
     };
 
     // ============================================
     // UTILITY FUNCTIONS
     // ============================================
-    
+
     function logInfo(msg, data) {
         console.log(`[Premium RSVP] ${msg}`, data || '');
     }
@@ -61,13 +62,8 @@
                 return;
             }
 
-            // Check if intro was already shown (localStorage)
-            const introShown = localStorage.getItem(STORAGE_KEYS.introShown);
-            if (introShown === 'true') {
-                logInfo('Intro already shown, skipping');
-                this.hide(true);
-                return;
-            }
+            // CRITICAL: Always show intro overlay - never skip based on localStorage
+            // The overlay will wait for user click/tap before playing video
 
             // Check if video exists
             const videoExists = await checkAssetExists(ASSETS.introVideo);
@@ -77,7 +73,7 @@
                 return;
             }
 
-            // Load video
+            // Load video (but don't autoplay - wait for user gesture)
             this.loadVideo();
         },
 
@@ -86,29 +82,28 @@
             this.video = document.createElement('video');
             this.video.className = 'intro-video';
             this.video.src = ASSETS.introVideo;
-            this.video.autoplay = false;
-            this.video.muted = true; // Required for autoplay
+            this.video.autoplay = false; // CRITICAL: Never autoplay - wait for user gesture
+            this.video.muted = false; // Unmuted for better experience
             this.video.playsInline = true;
             this.video.preload = 'auto';
-
-            // Create skip button
-            this.skipBtn = document.createElement('button');
-            this.skipBtn.className = 'intro-skip-btn';
-            this.skipBtn.textContent = 'דלג';
-            this.skipBtn.onclick = () => this.hide();
+            // Ensure visual continuity - poster or first frame should look like closed envelope
 
             // Replace intro content
             const introContent = this.overlay.querySelector('.intro-content');
             if (introContent) {
                 introContent.innerHTML = '';
                 introContent.appendChild(this.video);
-                introContent.appendChild(this.skipBtn);
+
+                // Add simple text hint (no button)
+                const hintCtx = document.createElement('div');
+                hintCtx.className = 'tap-to-open-hint';
+                hintCtx.innerHTML = '<p class="tap-hint">לחץ לפתיחה ✨</p>';
+                introContent.appendChild(hintCtx);
             }
 
             // Video events
             this.video.addEventListener('loadeddata', () => {
-                logInfo('Video loaded, attempting to play');
-                this.playVideo();
+                logInfo('Video loaded, waiting for user interaction');
             });
 
             this.video.addEventListener('ended', () => {
@@ -121,16 +116,29 @@
                 this.showFallback();
             });
 
-            // User tap to play
+            // User tap/click to play video AND start music
+            let userInteracted = false;
+            // Listen on the entire overlay
             this.overlay.addEventListener('click', (e) => {
-                if (e.target === this.skipBtn) return;
-                this.playVideo();
+                if (!userInteracted) {
+                    userInteracted = true;
+
+                    // Hide hint
+                    const hint = this.overlay.querySelector('.tap-to-open-hint');
+                    if (hint) hint.style.opacity = '0';
+
+                    // Play video (user gesture unlocks audio)
+                    this.playVideo();
+
+                    // Start music (same gesture unlocks audio)
+                    AudioController.startAfterIntro();
+                }
             });
         },
 
         async playVideo() {
             if (!this.video) return;
-            
+
             try {
                 await this.video.play();
                 logInfo('Video playing');
@@ -170,11 +178,8 @@
         hide(immediate = false) {
             if (!this.overlay) return;
 
-            // Mark as shown
-            localStorage.setItem(STORAGE_KEYS.introShown, 'true');
-
-            // Trigger audio start
-            AudioController.startAfterIntro();
+            // CRITICAL: Do NOT store introShown in localStorage
+            // Intro must show every visit
 
             // Fade out
             if (immediate) {
@@ -249,7 +254,9 @@
             const exists = await checkAssetExists(ASSETS.topLottie);
             if (!exists) {
                 logWarning(`Top lottie not found: ${ASSETS.topLottie}`);
-                container.style.display = 'none';
+                // Graceful fallback: show subtle background instead
+                container.style.background = 'linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%)';
+                container.style.height = '150px';
                 return;
             }
 
@@ -264,35 +271,16 @@
                 logInfo('Top lottie animation loaded');
             } catch (error) {
                 logWarning('Failed to load top lottie', error);
-                container.style.display = 'none';
+                // Graceful fallback
+                container.style.background = 'linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%)';
+                container.style.height = '150px';
             }
         },
 
         async initFlowersAnimation() {
-            const container = document.getElementById('flowersLottieContainer');
-            if (!container) return;
-
-            // Check if animation file exists
-            const exists = await checkAssetExists(ASSETS.flowersLottie);
-            if (!exists) {
-                logInfo('Flowers lottie not found (optional)');
-                container.style.display = 'none';
-                return;
-            }
-
-            try {
-                this.flowersAnimation = window.lottie.loadAnimation({
-                    container: container,
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    path: ASSETS.flowersLottie
-                });
-                logInfo('Flowers lottie animation loaded');
-            } catch (error) {
-                logWarning('Failed to load flowers lottie', error);
-                container.style.display = 'none';
-            }
+            // Flowers are now SVG decoration via CSS ::before/::after
+            // No JavaScript needed - handled by CSS
+            logInfo('Flowers decoration handled via CSS');
         }
     };
 
@@ -325,10 +313,11 @@
             // Set audio source
             this.audio.src = ASSETS.bgAudio;
             this.audio.volume = 0.6;
+            this.audio.loop = true;
 
-            // Load user preference
-            const savedPref = localStorage.getItem(STORAGE_KEYS.audioEnabled);
-            this.enabled = savedPref !== 'false'; // Default to true
+            // Load mute preference (only store mute state, not intro state)
+            const savedMuted = localStorage.getItem(STORAGE_KEYS.audioMuted);
+            this.muted = savedMuted === 'true';
 
             // Setup toggle
             this.toggle.addEventListener('click', () => this.toggleAudio());
@@ -341,20 +330,23 @@
         },
 
         startAfterIntro() {
-            // Auto-start audio after intro (if enabled)
-            if (this.enabled && !this.started) {
+            // Start audio after user gesture (from intro click)
+            // Only play if not muted
+            if (!this.muted && !this.started) {
                 this.play();
             }
         },
 
         async play() {
-            if (!this.audio || this.started) return;
+            if (!this.audio) return;
 
             try {
                 await this.audio.play();
                 this.started = true;
-                this.enabled = true;
+                this.muted = false;
                 this.updateUI();
+                // Save mute state (false = not muted = playing)
+                localStorage.setItem(STORAGE_KEYS.audioMuted, 'false');
                 logInfo('Audio playing');
             } catch (error) {
                 logWarning('Audio playback failed (user interaction required)', error);
@@ -365,25 +357,25 @@
             if (!this.audio) return;
             this.audio.pause();
             this.started = false;
-            this.enabled = false;
+            this.muted = true;
             this.updateUI();
+            // Save mute state (true = muted = paused)
+            localStorage.setItem(STORAGE_KEYS.audioMuted, 'true');
             logInfo('Audio paused');
         },
 
         toggleAudio() {
-            if (this.audio.paused) {
+            if (this.audio.paused || this.muted) {
                 this.play();
             } else {
                 this.pause();
             }
-            // Save preference
-            localStorage.setItem(STORAGE_KEYS.audioEnabled, this.enabled.toString());
         },
 
         updateUI() {
             if (!this.toggle) return;
-            
-            if (this.enabled && this.started) {
+
+            if (this.started && !this.muted) {
                 this.toggle.classList.add('music-playing');
                 this.toggle.setAttribute('aria-label', 'השתק מוזיקה');
             } else {
@@ -400,7 +392,7 @@
         init() {
             // Intersection observer for fade-in animations
             this.setupScrollReveal();
-            
+
             // Smooth scroll for anchor links
             this.setupSmoothScroll();
         },
@@ -426,7 +418,7 @@
 
         setupSmoothScroll() {
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function(e) {
+                anchor.addEventListener('click', function (e) {
                     e.preventDefault();
                     const target = document.querySelector(this.getAttribute('href'));
                     if (target) {
@@ -446,13 +438,13 @@
     const AssetValidator = {
         async validate() {
             logInfo('Validating premium assets...');
-            
+
             const results = {};
-            
+
             for (const [key, url] of Object.entries(ASSETS)) {
                 const exists = await checkAssetExists(url);
                 results[key] = exists;
-                
+
                 if (exists) {
                     logInfo(`✓ ${key}: ${url}`);
                 } else {

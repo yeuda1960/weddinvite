@@ -90,43 +90,29 @@
                     <section class="control-group">
                         <h3>מדיה וסגנון</h3>
 
-                        <div class="form-group">
+                        <!-- Premium Assets Notice -->
+                        <div class="form-group"
+                            style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <p style="margin: 0; font-size: 0.9rem; color: #856404;">
+                                <strong>נכסי Premium קבועים:</strong><br>
+                                קבצי ה-premium (וידאו פתיחה, מוזיקה, Lottie) נמצאים בתיקיית <code>/premium/</code> ואינם
+                                ניתנים לעריכה דרך ממשק זה.
+                                להעלאת קבצים חדשים, העלה אותם ידנית לשרת.
+                            </p>
+                        </div>
+
+                        <!-- Hidden fields (kept for backward compatibility but not editable) -->
+                        <div class="form-group" style="display: none;">
                             <label>אנימציית פתיחה</label>
                             <select id="introAnimation" class="designer-input">
                                 <option value="envelope">מעטפה נפתחת</option>
-                                <option value="heart">לב פועם</option>
-                                <option value="rings">טבעות</option>
-                                <option value="none">ללא</option>
                             </select>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" style="display: none;">
                             <label>מוזיקת רקע</label>
-                            <div class="music-upload-section">
-                                <!-- File Upload (Primary) -->
-                                <div class="upload-area">
-                                    <input type="file" id="musicFile" accept="audio/mp3,audio/mpeg"
-                                        style="display: none;">
-                                    <button type="button" class="upload-btn"
-                                        onclick="document.getElementById('musicFile').click()">
-                                        📁 העלה קובץ MP3
-                                    </button>
-                                    <div id="uploadStatus" class="upload-status"></div>
-                                    <div id="currentMusic" class="current-music" style="display: none;">
-                                        <span id="musicFileName"></span>
-                                        <button type="button" class="test-play-btn" id="testPlayBtn">▶️ נגן</button>
-                                        <button type="button" class="remove-music-btn" id="removeMusicBtn">🗑️</button>
-                                    </div>
-                                </div>
-
-                                <!-- Advanced: Direct URL -->
-                                <details class="advanced-option">
-                                    <summary>מתקדם: הדבק קישור ישיר</summary>
-                                    <input type="text" id="musicUrl" class="designer-input" placeholder="https://...mp3"
-                                        dir="ltr">
-                                    <small>קישור ישיר לקובץ MP3 (אופציונלי)</small>
-                                </details>
-                            </div>
+                            <input type="text" id="musicUrl" class="designer-input" value="/premium/media/bg-music.mp3"
+                                readonly>
                         </div>
 
                         <div class="form-group">
@@ -141,6 +127,7 @@
                                 <option value="Assistant">Assistant (קריא ונעים)</option>
                                 <option value="Rubik">Rubik (עגול וידידותי)</option>
                                 <option value="Frank Ruhl Libre">Frank Ruhl (קלאסי)</option>
+                                <option value="Amatic SC">Amatic SC (כתב יד)</option>
                             </select>
                         </div>
                     </section>

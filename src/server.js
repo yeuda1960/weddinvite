@@ -34,14 +34,20 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
 
-// Serve RSVP page
+// 1. Serve Main Public Files (Old system)
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/premium-rsvp', express.static(path.join(__dirname, '../public/premium-rsvp')));
+
+
+
+
+// Serve RSVP page (Old)
 app.get('/rsvp', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/rsvp.html'));
 });
 
-// Serve Admin Dashboard
+// Serve Admin Dashboard (Old)
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin/dashboard.html'));
 });
@@ -52,7 +58,91 @@ app.get('/api/health', (req, res) => {
 });
 
 // ============================================
-// CUSTOM MESSAGE SETTINGS
+// NEW: Premium Invitation APIs (Bridge Logic)
+// ============================================
+
+// 1. Save RSVP from the new invitation
+app.post('/api/rsvp', async (req, res) => {
+    try {
+        console.log('📝 Premium RSVP Payload:', req.body);
+
+        // 1. Extract & Sanitize
+        const { phone, name, attendanceStatus, guestsCount, dietary, notes, hasChildren, childrenCount } = req.body;
+
+        if (!phone) return res.status(400).json({ success: false, error: 'Phone required' });
+
+        let cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+        if (!cleanPhone.startsWith('972')) cleanPhone = '972' + cleanPhone;
+
+        // 2. Logic Mapping (CRITICAL FOR DASHBOARD STATS)
+        const isAttending = attendanceStatus === 'yes';
+        // FIX: If not attending, force count to 0. Otherwise use input (default 1).
+        const finalGuestsCount = isAttending ? parseInt(guestsCount || 1) : 0;
+
+        const rsvpData = {
+            rsvpName: name, // User's edited name
+            attending: isAttending,
+            numberOfGuests: finalGuestsCount,
+            hasChildren: hasChildren === true || hasChildren === 'true',
+            childrenCount: parseInt(childrenCount || 0),
+            dietary: dietary || '',
+            notes: notes || '',
+            rsvpSubmitted: true,
+            rsvpSubmittedAt: new Date(),
+            messageStatus: 'responded' // Colors the dashboard row green
+        };
+
+        // 3. Database Operation (Update or Create)
+        const docRef = db.collection('guests').doc(cleanPhone);
+        const doc = await docRef.get();
+
+        if (doc.exists) {
+            console.log(`🔄 Updating Guest: ${cleanPhone}`);
+            await docRef.update(rsvpData);
+        } else {
+            console.log(`➕ Creating New Guest: ${cleanPhone}`);
+            await docRef.set({
+                ...rsvpData,
+                phone: cleanPhone,
+                originalName: name, // Snapshot of first name used
+                name: name,
+                source: 'link_share',
+                createdAt: new Date()
+            });
+        }
+
+        res.status(200).json({ success: true, message: 'RSVP Saved' });
+
+    } catch (error) {
+        console.error('RSVP Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 2. Save Design Configuration from Admin Editor
+app.post('/api/admin/save-config', async (req, res) => {
+    try {
+        console.log('🎨 Design Config Update Received');
+        const { config, eventOverride } = req.body;
+
+        // Save to Firestore under 'settings'
+        await db.collection('settings').doc('premiumInvitation').set({
+            config,
+            eventOverride,
+            updatedAt: new Date()
+        });
+
+        res.status(200).json({ success: true, message: 'Configuration saved' });
+    } catch (error) {
+        console.error('Save Config Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
+// ============================================
+// CUSTOM MESSAGE SETTINGS (Existing Logic)
 // ============================================
 let cachedCustomMessage = null; // Cache the message server-side
 
@@ -119,7 +209,7 @@ async function getCustomMessage() {
 
 
 // ============================================
-// GOOGLE SHEETS SYNC
+// GOOGLE SHEETS SYNC (Existing Logic)
 // ============================================
 app.post('/api/sync-sheets', async (req, res) => {
     try {
@@ -233,7 +323,7 @@ app.post('/api/sync-sheets', async (req, res) => {
 });
 
 // ============================================
-// WHATSAPP SENDING ENDPOINTS
+// WHATSAPP SENDING ENDPOINTS (Existing Logic)
 // ============================================
 
 // Get WhatsApp status
@@ -263,11 +353,10 @@ app.post('/api/whatsapp/connect', async (req, res) => {
 app.post('/api/whatsapp/send-all', async (req, res) => {
     const sendingService = getSendingService();
 
-    const rsvpUrl = process.env.RSVP_URL || 'https://wedinvite-ee26d.web.app/rsvp.html';
     const imagePath = process.env.INVITATION_IMAGE_PATH || null;
 
-    // Start sending in background
-    sendingService.sendToAllGuests(rsvpUrl, imagePath)
+    // Start sending in background (link generation is handled by sendingService)
+    sendingService.sendToAllGuests(null, imagePath)
         .then(result => console.log('Sending completed:', result))
         .catch(err => console.error('Sending error:', err));
 
@@ -288,10 +377,10 @@ app.post('/api/whatsapp/send-test', async (req, res) => {
     }
 
     const sendingService = getSendingService();
-    const rsvpUrl = process.env.RSVP_URL || 'https://wedinvite-ee26d.web.app/rsvp.html';
     const imagePath = process.env.INVITATION_IMAGE_PATH || null;
 
-    const result = await sendingService.sendTestMessage(phone, name, rsvpUrl, imagePath);
+    // Link is generated internally by sendingService
+    const result = await sendingService.sendTestMessage(phone, name, null, imagePath);
     res.json(result);
 });
 
@@ -335,9 +424,9 @@ app.post('/api/whatsapp/send-single', async (req, res) => {
             return res.status(400).json({ success: false, error: 'WhatsApp not connected' });
         }
 
-        const rsvpUrl = process.env.RSVP_URL || 'https://wedinvite-ee26d.web.app/rsvp.html';
+        // CRITICAL: Use sendingService's centralized link generator
+        const deepLink = sendingService._generateDeepLink(phone, guest.originalName || guest.name);
         const imagePath = process.env.INVITATION_IMAGE_PATH || null;
-        const personalizedUrl = `${rsvpUrl}?phone=${phone}`;
 
         // Get custom message
         const customMessage = await getCustomMessage();
@@ -345,7 +434,7 @@ app.post('/api/whatsapp/send-single', async (req, res) => {
         const result = await sendingService.whatsapp.sendInvitation(
             phone,
             guest.originalName || guest.name,
-            personalizedUrl,
+            deepLink,
             imagePath,
             customMessage
         );
@@ -452,24 +541,36 @@ app.post('/api/guests/delete', async (req, res) => {
 });
 
 // ============================================
+// PREMIUM RSVP API BRIDGE
+// ============================================
+
+
+app.post('/api/admin/save-config', (req, res) => {
+    console.log('⚙️ Config Update Received:', req.body);
+    // TODO: Save to Firestore
+    res.json({ success: true });
+});
+
+
+// ============================================
 // START SERVER
 // ============================================
 app.listen(PORT, () => {
     console.log(`
 🎉 Wedding Invitation Server is running!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 RSVP Page:      http://localhost:${PORT}/rsvp.html
+📋 Old RSVP:        http://localhost:${PORT}/rsvp.html
 📊 Admin Dashboard: http://localhost:${PORT}/admin/dashboard.html
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW Premium Editor: http://localhost:${PORT}/premium-rsvp/index.html#/admin/premium-invitation
+✨ NEW Premium Invite: http://localhost:${PORT}/premium-rsvp/index.html#/invite/premium
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📡 API Endpoints:
   POST /api/sync-sheets     - Sync from Google Sheets
   GET  /api/whatsapp/status - Get WhatsApp status
-  POST /api/whatsapp/connect - Connect WhatsApp
-  POST /api/whatsapp/send-all - Send to all guests
-  POST /api/whatsapp/pause   - Pause sending
-  POST /api/whatsapp/resume  - Resume sending
-  POST /api/whatsapp/stop    - Stop sending
+  POST /api/rsvp            - Save NEW Premium RSVP
+  POST /api/admin/save-config - Save Design Config
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     `);
 });

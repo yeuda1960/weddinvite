@@ -1,150 +1,108 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
-const path = require('path');
 
 class WhatsAppService {
     constructor() {
-        this.client = null;
-        this.isReady = false;
-    }
-
-    /**
-     * Initialize WhatsApp client
-     */
-    async initialize() {
-        console.log('Initializing WhatsApp client...');
-        console.log('⏳ This may take 10-30 minutes on first run (downloading browser files)...\n');
-
         this.client = new Client({
             authStrategy: new LocalAuth(),
             puppeteer: {
-                headless: false,  // Show browser window
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
-                timeout: 180000  // 3 minutes timeout
+                headless: false,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
             }
         });
 
-        // Loading progress event
-        this.client.on('loading_screen', (percent, message) => {
-            console.log(`⏳ Loading: ${percent}% - ${message}`);
-        });
+        this.isReady = false;
+        this.initializeEvents();
+    }
 
-        // QR Code event - scan this with your phone
+    initializeEvents() {
         this.client.on('qr', (qr) => {
-            console.log('\n=================================');
-            console.log('📱 QR Code Ready! Scan with your phone:');
-            console.log('=================================\n');
+            console.log('📱 QR RECEIVED', qr);
             qrcode.generate(qr, { small: true });
-            console.log('\n=================================');
-            console.log('Open WhatsApp → Settings → Linked Devices → Link a Device');
-            console.log('=================================\n');
         });
 
-        // Ready event
         this.client.on('ready', () => {
-            console.log('✅ WhatsApp client is ready!');
+            console.log('✅ WhatsApp is READY!');
             this.isReady = true;
         });
 
-        // Authentication success
         this.client.on('authenticated', () => {
             console.log('✅ WhatsApp authenticated successfully');
+            this.isReady = true; // Force ready on auth
         });
 
-        // Authentication failure
-        this.client.on('auth_failure', (msg) => {
-            console.error('❌ WhatsApp authentication failed:', msg);
-        });
-
-        // Disconnected
-        this.client.on('disconnected', (reason) => {
-            console.log('WhatsApp disconnected:', reason);
+        this.client.on('auth_failure', msg => {
+            console.error('❌ AUTHENTICATION FAILURE', msg);
             this.isReady = false;
         });
 
-        await this.client.initialize();
-
-        // Wait for ready state
-        return new Promise((resolve) => {
-            if (this.isReady) {
-                resolve();
-            } else {
-                this.client.on('ready', () => resolve());
-            }
+        this.client.on('disconnected', (reason) => {
+            console.log('❌ WhatsApp Disconnected:', reason);
+            this.isReady = false;
         });
     }
 
-    /**
-     * Send invitation message with image
-     * @param {string} phone - Guest phone number
-     * @param {string} guestName - Guest name
-     * @param {string} rsvpUrl - RSVP page URL
-     * @param {string} imagePath - Path to invitation image
-     * @param {string} customMessage - Custom message template (optional)
-     */
-    async sendInvitation(phone, guestName, rsvpUrl, imagePath, customMessage = null) {
+    initialize() {
+        console.log('🚀 Initializing WhatsApp Client...');
+        return this.client.initialize();
+    }
+
+    async sendInvitation(phone, name, rsvpUrl, imagePath, customMessage) {
         try {
-            // Format phone number for WhatsApp (must include country code)
-            const chatId = `${phone}@c.us`;
+            // 1. Sanitize Phone
+            let cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+            if (!cleanPhone.startsWith('972')) cleanPhone = '972' + cleanPhone;
 
-            let message;
+            console.log(`🔍 Verifying: ${cleanPhone}...`);
 
-            if (customMessage) {
-                // Use custom message with placeholder replacement
-                message = customMessage
-                    .replace(/\{שם\}/g, guestName)
-                    .replace(/\{קישור\}/g, rsvpUrl);
-            } else {
-                // Default message if no custom message provided
-                message = `
-שלום ${guestName}! 🎉
+            // 2. Resolve WhatsApp ID (LID)
+            const contactId = await this.client.getNumberId(cleanPhone);
 
-את/ה מוזמן/ת לחתונה שלנו! 💒
-
-אנחנו שמחים להזמין אותך לחגוג איתנו את היום המיוחד שלנו.
-
-📅 פרטי האירוע מצורפים בתמונה
-
-🔗 אנא אשר/י הגעה בקישור הבא:
-${rsvpUrl}
-
-נשמח לראותך! ❤️
-          `.trim();
+            if (!contactId) {
+                console.warn(`⚠️ Skipped: ${cleanPhone} not registered.`);
+                return { success: false, error: 'Number not registered on WhatsApp' };
             }
 
-            // Send image with caption
+            const chatId = contactId._serialized;
+
+            // 3. Prepare Message
+            let messageText = customMessage
+                ? customMessage.replace('{שם}', name).replace('{קישור}', rsvpUrl)
+                : `שלום ${name}!\nנשמח לראותכם בחתונה שלנו.\nלפרטים ואישור הגעה: ${rsvpUrl}`;
+
+            // 4. GET CHAT OBJECT (Crucial Step to bypass sendSeen crash)
+            const chat = await this.client.getChatById(chatId);
+
+            // 5. Send using Chat Object
+            let msg;
             if (imagePath && fs.existsSync(imagePath)) {
-                const media = MessageMedia.fromFilePath(imagePath);
-                await this.client.sendMessage(chatId, media, { caption: message });
+                try {
+                    const media = MessageMedia.fromFilePath(imagePath);
+                    msg = await chat.sendMessage(media, { caption: messageText });
+                } catch (imgErr) {
+                    console.error('Image send failed, sending text:', imgErr);
+                    msg = await chat.sendMessage(messageText);
+                }
             } else {
-                // If no image, send text only
-                await this.client.sendMessage(chatId, message);
+                msg = await chat.sendMessage(messageText);
             }
 
-            console.log(`✅ Message sent to ${guestName} (${phone})`);
-            return { success: true };
+            if (msg && msg.id) {
+                console.log(`✅ Sent to ${name} (${cleanPhone})`);
+                return { success: true };
+            } else {
+                throw new Error('No message ID returned');
+            }
 
         } catch (error) {
-            console.error(`❌ Failed to send message to ${phone}:`, error.message);
+            console.error(`❌ Send Error (${name}):`, error.message);
+            // Check for specific known crashes
+            if (error.message.includes('markedUnread')) {
+                return { success: false, error: 'WhatsApp internal error (markedUnread)' };
+            }
             return { success: false, error: error.message };
-        }
-    }
-
-    /**
-     * Send message with delay to avoid rate limiting
-     */
-    async delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    /**
-     * Destroy client connection
-     */
-    async destroy() {
-        if (this.client) {
-            await this.client.destroy();
-            console.log('WhatsApp client destroyed');
         }
     }
 }
